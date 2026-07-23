@@ -1,0 +1,13 @@
+{
+  "name": "ftrans-iranyitoszam-terkep",
+  "version": "2.1.0",
+  "private": true,
+  "description": "F-TRANS irányítószám-kereső és körzeti térkép Cloudflare Workers Static Assets telepítéssel.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.94.0"
+  }
+}
