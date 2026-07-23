@@ -45,3 +45,6 @@ A Wrangler `name` mezője szándékosan pontosan megegyezik a meglévő Worker n
 ## Biztonság
 
 Ne tölts fel Cloudflare API-tokent, jelszót vagy `.env` fájlt a repositoryba.
+
+
+Automatikus Cloudflare telepítés aktiválva.
