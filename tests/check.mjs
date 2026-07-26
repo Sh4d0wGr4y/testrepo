@@ -44,7 +44,7 @@ for (const rel of REQUIRED_FILES) {
 
 const worker = fs.readFileSync(path.join(root, 'src/index.js'), 'utf8');
 assert.match(worker, /__health/);
-assert.match(worker, /APP_VERSION = '3\.3\.0'/);
+assert.match(worker, /APP_VERSION = '3\.3\.1'/);
 ok('worker /__health és verzió');
 
 const app = fs.readFileSync(path.join(publicDir, 'app.js'), 'utf8');
@@ -68,9 +68,16 @@ assert.ok(indexHtml.includes('/vendor/leaflet.js'));
 assert.ok(indexHtml.includes('retryButton'));
 assert.ok(!/GeoJSON|FeatureCollection|prefix assignment/i.test(indexHtml.replace(/<script[\s\S]*?<\/script>/g, '')));
 ok('index felhasználói feliratok');
+assert.ok(indexHtml.includes('country-flag-button'));
+assert.ok(indexHtml.includes('citiesToggle'));
+assert.ok(indexHtml.includes('clearFiltersButton'));
+assert.ok(!indexHtml.includes('countrySelect'));
+assert.ok(!indexHtml.includes('data-map-mode'));
+ok('ország zászlók, városok pipa, szűrő törlés');
+
 
 const manifest = JSON.parse(fs.readFileSync(path.join(publicDir, 'data/processed/manifest.json'), 'utf8'));
-assert.equal(manifest.appVersion, '3.3.0');
+assert.equal(manifest.appVersion, '3.3.1');
 ok('manifest appVersion');
 
 for (const [name, spec] of Object.entries(EXPECTED)) {

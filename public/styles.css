@@ -98,6 +98,51 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 }
 .select-wrap::after { content: "⌄"; position: absolute; right: 14px; top: 10px; color: var(--muted); pointer-events: none; }
 .field-flag { position: absolute; left: 14px; top: 11px; z-index: 1; pointer-events: none; }
+
+.country-flags {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.country-flag-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 78px;
+  padding: 10px 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--panel-soft);
+  color: var(--text);
+}
+.country-flag-button .flag-emoji { font-size: 1.7rem; line-height: 1; }
+.country-flag-button .flag-name { font-size: 0.68rem; font-weight: 800; text-align: center; line-height: 1.2; }
+.country-flag-button.is-active {
+  border-color: var(--green);
+  background: var(--green-soft);
+  color: var(--green-dark);
+  box-shadow: 0 0 0 2px rgba(32, 139, 57, 0.12);
+}
+.country-flag-button:hover { border-color: var(--green); }
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  margin-bottom: 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.check-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green);
+}
+.secondary-button.full-width { width: 100%; }
 .search-line { display: grid; grid-template-columns: minmax(0, 1fr) 118px; gap: 8px; }
 .search-line input {
   width: 100%; min-width: 0; height: 46px; padding: 0 13px;
@@ -215,12 +260,49 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .result-actions .secondary-button, .result-actions .primary-link { min-height: 42px; font-size: .78rem; }
 
 .map-legend {
-  position: absolute; z-index: 650; left: 14px; bottom: 14px; display: inline-flex; align-items: center; gap: 9px;
-  max-width: min(340px, calc(100% - 28px)); padding: 9px 12px; border-radius: 11px;
-  color: #48574d; background: rgba(255,255,255,.94); border: 1px solid rgba(205,220,210,.9);
+  position: absolute; z-index: 650; left: 14px; bottom: 14px;
+  display: grid; gap: 8px;
+  max-width: min(280px, calc(100% - 28px)); padding: 11px 13px; border-radius: 12px;
+  color: #48574d; background: rgba(255,255,255,.95); border: 1px solid rgba(205,220,210,.9);
   box-shadow: 0 7px 18px rgba(20,52,30,.12); font-size: .72rem;
 }
-.legend-gradient { width: 28px; height: 7px; border-radius: 99px; background: linear-gradient(90deg,#50b96a,#34a6a8,#5f84d8,#d68e4c); }
+.legend-scale { display: grid; gap: 6px; }
+.legend-scale strong { font-size: 0.7rem; letter-spacing: 0.04em; text-transform: uppercase; color: #2f4236; }
+.legend-scale-row { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; }
+.legend-gradient {
+  width: 100%; height: 8px; border-radius: 99px;
+  background: linear-gradient(90deg, hsl(220 78% 47%), hsl(160 78% 42%), hsl(90 70% 42%), hsl(40 80% 48%), hsl(0 78% 50%));
+}
+.legend-scale p { margin: 0; color: #66756c; }
+.legend-city-row { display: flex; align-items: center; gap: 8px; padding-top: 2px; border-top: 1px solid #e4ebe6; }
+.legend-city-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #1d2a22; box-shadow: 0 0 0 3px rgba(255,255,255,.95), 0 0 0 4px rgba(29,42,34,.35);
+}
+html[data-theme='dark'] .map-legend {
+  color: #d7e2da; background: rgba(22, 32, 26, 0.94); border-color: rgba(70, 95, 78, 0.55);
+}
+html[data-theme='dark'] .legend-scale strong { color: #e7f0ea; }
+html[data-theme='dark'] .legend-scale p,
+html[data-theme='dark'] .legend-city-row { color: #a9b7ae; border-color: #2d3d33; }
+
+.city-marker-icon { background: transparent !important; border: 0 !important; }
+.city-map-label {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 2px 8px 2px 2px; border-radius: 999px;
+  background: rgba(255,255,255,.92); border: 1px solid rgba(30,50,38,.18);
+  box-shadow: 0 2px 8px rgba(16,37,23,.14); white-space: nowrap;
+}
+.city-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #1d2a22;
+  box-shadow: 0 0 0 2px #fff;
+}
+.city-name { font-size: 11px; font-weight: 800; color: #1c2a22; line-height: 1; }
+html[data-theme='dark'] .city-map-label {
+  background: rgba(24, 34, 28, 0.92); border-color: rgba(140,180,150,.3);
+}
+html[data-theme='dark'] .city-name { color: #edf4ef; }
+html[data-theme='dark'] .city-dot { background: #9fd4ab; box-shadow: 0 0 0 2px #1a2520; }
 .map-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font-size: .72rem; }
 
 .info-dialog { width: min(520px, calc(100% - 32px)); border: 1px solid var(--line); border-radius: 18px; color: var(--text); background: var(--panel); box-shadow: var(--shadow); }

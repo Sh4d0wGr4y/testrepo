@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.0';
+const APP_VERSION = '3.3.1';
 
 const CONFIG = {
   HU: {
@@ -28,11 +28,80 @@ const LABEL_OVERRIDES = {
   // Csak igazolt problémás prefixekhez. Üres induláskor; a pont-a-poligonon ellenőrzés a fő védelem.
 };
 
+const CITY_DATA = {
+  HU: [
+    ['Budapest', 47.4979, 19.0402],
+    ['Győr', 47.6875, 17.6504],
+    ['Sopron', 47.6817, 16.5845],
+    ['Szombathely', 47.2307, 16.6218],
+    ['Zalaegerszeg', 46.8417, 16.8416],
+    ['Veszprém', 47.0933, 17.9115],
+    ['Székesfehérvár', 47.1860, 18.4221],
+    ['Pécs', 46.0727, 18.2323],
+    ['Kaposvár', 46.3594, 17.7968],
+    ['Kecskemét', 46.9062, 19.6913],
+    ['Szeged', 46.2530, 20.1414],
+    ['Békéscsaba', 46.6736, 21.0877],
+    ['Szolnok', 47.1621, 20.1825],
+    ['Debrecen', 47.5316, 21.6273],
+    ['Nyíregyháza', 47.9558, 21.7167],
+    ['Miskolc', 48.1031, 20.7784],
+    ['Eger', 47.9025, 20.3772]
+  ],
+  DE: [
+    ['Berlin', 52.5200, 13.4050],
+    ['Hamburg', 53.5511, 9.9937],
+    ['Bremen', 53.0793, 8.8017],
+    ['Hannover', 52.3759, 9.7320],
+    ['Dortmund', 51.5136, 7.4653],
+    ['Düsseldorf', 51.2277, 6.7735],
+    ['Köln', 50.9375, 6.9603],
+    ['Frankfurt', 50.1109, 8.6821],
+    ['Stuttgart', 48.7758, 9.1829],
+    ['München', 48.1351, 11.5820],
+    ['Nürnberg', 49.4521, 11.0767],
+    ['Leipzig', 51.3397, 12.3731],
+    ['Dresden', 51.0504, 13.7373],
+    ['Rostock', 54.0924, 12.0991]
+  ],
+  IT: [
+    ['Milano', 45.4642, 9.1900],
+    ['Torino', 45.0703, 7.6869],
+    ['Genova', 44.4056, 8.9463],
+    ['Venezia', 45.4408, 12.3155],
+    ['Bologna', 44.4949, 11.3426],
+    ['Firenze', 43.7696, 11.2558],
+    ['Roma', 41.9028, 12.4964],
+    ['Napoli', 40.8518, 14.2681],
+    ['Bari', 41.1171, 16.8719],
+    ['Palermo', 38.1157, 13.3615],
+    ['Catania', 37.5079, 15.0830],
+    ['Cagliari', 39.2238, 9.1217]
+  ]
+};
+
+const CITIES_KEY = 'ftrans-show-cities-v3';
+
+function readShowCities() {
+  try {
+    const value = localStorage.getItem(CITIES_KEY);
+    if (value === null) return true;
+    return value !== '0';
+  } catch {
+    return true;
+  }
+}
+
+function saveShowCities() {
+  try { localStorage.setItem(CITIES_KEY, state.showCities ? '1' : '0'); } catch {}
+}
+
 const $ = (id) => document.getElementById(id);
 const elements = {
-  countrySelect: $('countrySelect'), countryFlag: $('countryFlag'), searchForm: $('searchForm'), searchInput: $('searchInput'),
+  countryFlags: $('countryFlags'), searchForm: $('searchForm'), searchInput: $('searchInput'),
   inputHelp: $('inputHelp'), rangeGrid: $('rangeGrid'), quickGrid: $('quickGrid'), quickEmpty: $('quickEmpty'),
-  showAllButton: $('showAllButton'), historyList: $('historyList'), historyEmpty: $('historyEmpty'), clearHistoryButton: $('clearHistoryButton'),
+  showAllButton: $('showAllButton'), clearFiltersButton: $('clearFiltersButton'), citiesToggle: $('citiesToggle'),
+  historyList: $('historyList'), historyEmpty: $('historyEmpty'), clearHistoryButton: $('clearHistoryButton'),
   countryName: $('countryName'), mapTitle: $('mapTitle'), mapSubtitle: $('mapSubtitle'), mapLoading: $('mapLoading'), loadingText: $('loadingText'),
   retryButton: $('retryButton'),
   resultCard: $('resultCard'), resultCloseButton: $('resultCloseButton'), resultBadge: $('resultBadge'), resultCode: $('resultCode'),
@@ -40,7 +109,8 @@ const elements = {
   detailRegion: $('detailRegion'), resultMessage: $('resultMessage'), copyButton: $('copyButton'), mapsLink: $('mapsLink'),
   fitCountryButton: $('fitCountryButton'), clearSelectionButton: $('clearSelectionButton'), fullscreenButton: $('fullscreenButton'),
   themeButton: $('themeButton'), infoButton: $('infoButton'), infoDialog: $('infoDialog'), toast: $('toast'), dataStatus: $('dataStatus'),
-  systemStatus: $('systemStatus'), mapLegend: $('mapLegend')
+  systemStatus: $('systemStatus'), mapLegend: $('mapLegend'), legendMin: $('legendMin'), legendMax: $('legendMax'),
+  legendTitle: $('legendTitle'), legendHint: $('legendHint'), legendCityRow: $('legendCityRow')
 };
 
 if (typeof L === 'undefined') {
@@ -48,8 +118,8 @@ if (typeof L === 'undefined') {
 }
 
 const state = {
-  country: 'HU', layer: null, labels: L.layerGroup(), groups: new Map(), features: new Map(), selectedPrefix: null,
-  activeRange: null, mapMode: 'color', currentResult: null, lastSuccessfulResult: null,
+  country: 'HU', layer: null, labels: L.layerGroup(), cities: L.layerGroup(), groups: new Map(), features: new Map(), selectedPrefix: null,
+  activeRange: null, showCities: readShowCities(), currentResult: null, lastSuccessfulResult: null,
   dataCache: new Map(), loadToken: 0, controller: null,
   history: readHistory(), manifest: null, lastLoadError: null
 };
@@ -75,11 +145,32 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   crossOrigin: true,
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
+
+map.createPane('zoneLabelPane');
+map.getPane('zoneLabelPane').style.zIndex = 650;
+map.getPane('zoneLabelPane').style.pointerEvents = 'none';
+map.createPane('cityPane');
+map.getPane('cityPane').style.zIndex = 680;
+map.getPane('cityPane').style.pointerEvents = 'none';
+
 state.labels.addTo(map);
+state.cities.addTo(map);
 
 function cleanDigits(value) { return String(value || '').replace(/\D/g, ''); }
 function prefixNumber(prefix) { const n = Number.parseInt(prefix, 10); return Number.isFinite(n) ? n : -1; }
-function colorFor(prefix) { const n = Math.max(0, prefixNumber(prefix)); return COLORS[Math.floor(n / 10) % COLORS.length]; }
+function colorFor(prefix, country = state.country) {
+  const n = Math.max(0, prefixNumber(prefix));
+  const digits = CONFIG[country]?.prefixDigits || 2;
+  let t;
+  if (digits === 1) {
+    // HU 1–9: teljes színskála, minden zóna külön árnyalat
+    t = Math.min(1, Math.max(0, (n - 1) / 8));
+  } else {
+    t = Math.min(1, Math.max(0, n / 99));
+  }
+  const hue = 220 + (0 - 220) * t; // kék → zöld → sárga → piros
+  return `hsl(${hue} 78% 47%)`;
+}
 function inActiveRange(prefix) {
   if (!state.activeRange) return true;
   const n = prefixNumber(prefix);
@@ -94,14 +185,14 @@ function polygonStyle(feature) {
   const prefix = String(feature.properties?.prefix ?? '');
   const selected = prefix === state.selectedPrefix;
   const visible = inActiveRange(prefix);
-  const outlineMode = state.mapMode === 'outline';
+  const fill = colorFor(prefix);
   return {
     renderer: svgRenderer,
-    color: selected ? '#ffffff' : visible ? '#456153' : '#a7b4ac',
-    weight: selected ? 3.2 : visible ? 1.05 : 0.65,
-    opacity: selected ? 1 : visible ? 0.72 : 0.35,
-    fillColor: selected ? '#36a84e' : colorFor(prefix),
-    fillOpacity: selected ? 0.78 : outlineMode ? (visible ? 0.09 : 0.025) : (visible ? 0.56 : 0.08),
+    color: selected ? '#ffffff' : visible ? '#2f4738' : '#a7b4ac',
+    weight: selected ? 3.2 : visible ? 1.15 : 0.65,
+    opacity: selected ? 1 : visible ? 0.85 : 0.35,
+    fillColor: selected ? fill : fill,
+    fillOpacity: selected ? 0.82 : (visible ? 0.62 : 0.12),
     lineCap: 'round',
     lineJoin: 'round',
     className: 'ftrans-zone-path'
@@ -474,7 +565,7 @@ function buildLabels() {
       iconSize: [40, 28],
       iconAnchor: [20, 14]
     });
-    L.marker(item.latLng, { icon, interactive: false, keyboard: false, pane: 'markerPane' }).addTo(state.labels);
+    L.marker(item.latLng, { icon, interactive: false, keyboard: false, pane: 'zoneLabelPane' }).addTo(state.labels);
   }
 }
 
@@ -553,6 +644,7 @@ function removeActiveLayer() {
     state.layer = null;
   }
   state.labels.clearLayers();
+  state.cities.clearLayers();
 }
 
 async function loadCountry(nextCountry, options = {}) {
@@ -596,6 +688,8 @@ async function loadCountry(nextCountry, options = {}) {
     fitCountry(false);
     scheduleMapRefresh();
     setTimeout(buildLabels, 60);
+    renderCities();
+    updateLegend();
 
     const count = state.groups.size;
     elements.dataStatus.textContent = `${CONFIG[nextCountry].name}: ${count} zóna betöltve · v${APP_VERSION}`;
@@ -618,14 +712,82 @@ async function loadCountry(nextCountry, options = {}) {
 
 function updateCountryUI() {
   const cfg = CONFIG[state.country];
-  elements.countrySelect.value = state.country;
-  elements.countryFlag.textContent = cfg.flag;
+  syncCountryFlags();
   elements.searchInput.value = '';
   elements.searchInput.maxLength = cfg.digits;
   elements.searchInput.placeholder = cfg.placeholder;
   elements.countryName.textContent = cfg.name.toUpperCase();
   elements.mapTitle.textContent = state.country === 'HU' ? '1–9 postai zóna' : 'Kétjegyű postai zónák';
   elements.mapSubtitle.textContent = 'Kattints egy területre, vagy szűkíts zónacsoport szerint.';
+  updateLegend();
+}
+
+
+
+function updateLegend() {
+  const hu = state.country === 'HU';
+  if (elements.legendMin) elements.legendMin.textContent = hu ? '1' : '00';
+  if (elements.legendMax) elements.legendMax.textContent = hu ? '9' : '99';
+  if (elements.legendTitle) elements.legendTitle.textContent = hu ? 'Magyar színskála' : 'Zóna színskála';
+  if (elements.legendHint) {
+    elements.legendHint.textContent = hu
+      ? 'Az 1–9 zónák saját színt kapnak.'
+      : 'A szín a zónaszám növekedésével változik.';
+  }
+  if (elements.legendCityRow) elements.legendCityRow.hidden = !state.showCities;
+  if (elements.mapLegend) elements.mapLegend.hidden = false;
+}
+
+function syncCountryFlags() {
+  if (!elements.countryFlags) return;
+  elements.countryFlags.querySelectorAll('[data-country]').forEach((button) => {
+    const active = button.dataset.country === state.country;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+}
+
+function renderCities() {
+  state.cities.clearLayers();
+  if (!state.showCities) {
+    if (elements.legendCityRow) elements.legendCityRow.hidden = true;
+    return;
+  }
+  if (elements.legendCityRow) elements.legendCityRow.hidden = false;
+  for (const [name, lat, lon] of CITY_DATA[state.country] || []) {
+    const icon = L.divIcon({
+      className: 'city-marker-icon',
+      html: `<div class="city-map-label"><span class="city-dot" aria-hidden="true"></span><span class="city-name">${escapeHtml(name)}</span></div>`,
+      iconSize: [150, 22],
+      iconAnchor: [7, 11]
+    });
+    L.marker([lat, lon], {
+      icon,
+      pane: 'cityPane',
+      interactive: false,
+      keyboard: false,
+      zIndexOffset: 4000
+    }).addTo(state.cities);
+  }
+}
+
+function boundsForFeature(feature) {
+  const polygon = largestPolygon(feature?.geometry);
+  if (!polygon?.[0]?.length) return null;
+  const latLngs = polygon[0].map((coord) => L.latLng(coord[1], coord[0]));
+  return L.latLngBounds(latLngs);
+}
+
+function fitFeature(feature, options = {}) {
+  const bounds = boundsForFeature(feature);
+  if (!bounds?.isValid()) return false;
+  map.fitBounds(bounds, {
+    padding: options.padding || [55, 55],
+    maxZoom: options.maxZoom ?? (state.country === 'HU' ? 8 : 9),
+    animate: false
+  });
+  scheduleMapRefresh();
+  return true;
 }
 
 function fitCountry(animate = false) {
@@ -658,9 +820,12 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
   buildQuickButtons();
 
   if (fit) {
-    const bounds = L.featureGroup(state.groups.get(prefix)).getBounds();
-    if (bounds.isValid()) {
-      map.fitBounds(bounds, { padding: [55, 55], maxZoom: state.country === 'HU' ? 8 : 9, animate: false });
+    const feature = state.features.get(prefix);
+    if (!fitFeature(feature, { maxZoom: state.country === 'HU' ? 8 : 9 })) {
+      const bounds = L.featureGroup(state.groups.get(prefix)).getBounds();
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [55, 55], maxZoom: state.country === 'HU' ? 8 : 9, animate: false });
+      }
     }
   }
   scheduleMapRefresh();
@@ -854,17 +1019,39 @@ async function loadManifest() {
   }
 }
 
+function clearAllFilters() {
+  state.activeRange = null;
+  state.selectedPrefix = null;
+  elements.searchInput.value = '';
+  setInputMessage();
+  hideResult();
+  restyleMap();
+  buildRangeButtons();
+  buildQuickButtons();
+  buildLabels();
+  fitCountry(false);
+  toast('Minden szűrőt töröltem.');
+}
+
 function bindEvents() {
   elements.searchForm.addEventListener('submit', (event) => {
     event.preventDefault();
     executeSearch(elements.searchInput.value);
   });
   elements.searchInput.addEventListener('input', () => {
-    const cfg = CONFIG[elements.countrySelect.value];
+    const cfg = CONFIG[state.country];
     elements.searchInput.value = cleanDigits(elements.searchInput.value).slice(0, cfg.digits);
     setInputMessage();
   });
-  elements.countrySelect.addEventListener('change', () => loadCountry(elements.countrySelect.value));
+  if (elements.countryFlags) {
+    elements.countryFlags.querySelectorAll('[data-country]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const next = button.dataset.country;
+        if (!next || next === state.country) return;
+        loadCountry(next);
+      });
+    });
+  }
   elements.showAllButton.addEventListener('click', () => {
     state.activeRange = null;
     state.selectedPrefix = null;
@@ -875,16 +1062,18 @@ function bindEvents() {
     buildLabels();
     fitCountry(false);
   });
-  document.querySelectorAll('[data-map-mode]').forEach((button) => button.addEventListener('click', () => {
-    state.mapMode = button.dataset.mapMode;
-    document.querySelectorAll('[data-map-mode]').forEach((b) => {
-      const active = b === button;
-      b.classList.toggle('is-active', active);
-      b.setAttribute('aria-pressed', String(active));
+  if (elements.clearFiltersButton) {
+    elements.clearFiltersButton.addEventListener('click', clearAllFilters);
+  }
+  if (elements.citiesToggle) {
+    elements.citiesToggle.checked = state.showCities;
+    elements.citiesToggle.addEventListener('change', () => {
+      state.showCities = Boolean(elements.citiesToggle.checked);
+      saveShowCities();
+      renderCities();
+      updateLegend();
     });
-    elements.mapLegend.hidden = state.mapMode === 'outline';
-    restyleMap();
-  }));
+  }
   elements.fitCountryButton.addEventListener('click', () => fitCountry(false));
   elements.clearSelectionButton.addEventListener('click', clearSelection);
   elements.resultCloseButton.addEventListener('click', hideResult);
@@ -921,6 +1110,9 @@ async function init() {
     try { return localStorage.getItem(THEME_KEY); } catch { return null; }
   })();
   setTheme(savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+  if (elements.citiesToggle) elements.citiesToggle.checked = state.showCities;
+  syncCountryFlags();
+  updateLegend();
   bindEvents();
   renderHistory();
   loadManifest();

@@ -30,14 +30,20 @@
       </header>
 
       <form id="searchForm" class="search-form" novalidate>
-        <label class="field-label" for="countrySelect">Ország</label>
-        <div class="select-wrap">
-          <span id="countryFlag" class="field-flag" aria-hidden="true">🇭🇺</span>
-          <select id="countrySelect" aria-label="Ország kiválasztása">
-            <option value="HU">Magyarország</option>
-            <option value="DE">Németország</option>
-            <option value="IT">Olaszország</option>
-          </select>
+        <p class="field-label" id="countryLabel">Ország</p>
+        <div class="country-flags" id="countryFlags" role="group" aria-labelledby="countryLabel">
+          <button type="button" class="country-flag-button is-active" data-country="HU" aria-pressed="true" title="Magyarország">
+            <span class="flag-emoji" aria-hidden="true">🇭🇺</span>
+            <span class="flag-name">Magyarország</span>
+          </button>
+          <button type="button" class="country-flag-button" data-country="DE" aria-pressed="false" title="Németország">
+            <span class="flag-emoji" aria-hidden="true">🇩🇪</span>
+            <span class="flag-name">Németország</span>
+          </button>
+          <button type="button" class="country-flag-button" data-country="IT" aria-pressed="false" title="Olaszország">
+            <span class="flag-emoji" aria-hidden="true">🇮🇹</span>
+            <span class="flag-name">Olaszország</span>
+          </button>
         </div>
 
         <label class="field-label" for="searchInput">Irányítószám</label>
@@ -52,10 +58,11 @@
 
       <section class="control-section" aria-labelledby="mapViewTitle">
         <div class="section-head"><h2 id="mapViewTitle">Térkép nézete</h2></div>
-        <div class="segmented" role="group" aria-label="Térkép nézete">
-          <button class="segment is-active" type="button" data-map-mode="color" aria-pressed="true">Színes zónák</button>
-          <button class="segment" type="button" data-map-mode="outline" aria-pressed="false">Egyszerű</button>
-        </div>
+        <label class="check-row" for="citiesToggle">
+          <input id="citiesToggle" type="checkbox" checked />
+          <span>Nagyvárosok megjelenítése</span>
+        </label>
+        <button class="secondary-button full-width" id="clearFiltersButton" type="button">Összes szűrő törlése</button>
       </section>
 
       <section class="control-section" aria-labelledby="rangeTitle">
@@ -129,14 +136,25 @@
         </aside>
 
         <div class="map-legend" id="mapLegend">
-          <span class="legend-gradient" aria-hidden="true"></span>
-          <span>A színek csak a zónák elkülönítését segítik.</span>
+          <div class="legend-scale">
+            <strong id="legendTitle">Színskála</strong>
+            <div class="legend-scale-row">
+              <span id="legendMin">1</span>
+              <span class="legend-gradient" aria-hidden="true"></span>
+              <span id="legendMax">9</span>
+            </div>
+            <p id="legendHint">A színek a zónák elkülönítését segítik.</p>
+          </div>
+          <div class="legend-city-row" id="legendCityRow">
+            <span class="legend-city-dot" aria-hidden="true"></span>
+            <span>Nagyváros</span>
+          </div>
         </div>
       </div>
 
       <footer class="map-footer">
         <span id="dataStatus">Térképi adatok betöltése…</span>
-        <span>V3.3 · szűrhető kétpaneles nézet</span>
+        <span>V3.3.1 · szűrhető kétpaneles nézet</span>
       </footer>
     </main>
   </div>

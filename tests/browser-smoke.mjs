@@ -62,7 +62,7 @@ try {
   }, null, { timeout: 30000 });
 
   async function shot(country, filename) {
-    await page.selectOption('#countrySelect', country);
+    await page.click(`.country-flag-button[data-country="${country}"]`);
     await page.waitForFunction(() => {
       const loading = document.getElementById('mapLoading');
       return loading && loading.hidden === true;
@@ -80,14 +80,14 @@ try {
   await shot('HU', 'hu-map.png');
 
   // Gyors országváltás – ne maradjon végtelen töltés
-  await page.selectOption('#countrySelect', 'DE');
-  await page.selectOption('#countrySelect', 'IT');
-  await page.selectOption('#countrySelect', 'HU');
+  await page.click('.country-flag-button[data-country="DE"]');
+  await page.click('.country-flag-button[data-country="IT"]');
+  await page.click('.country-flag-button[data-country="HU"]');
   await page.waitForFunction(() => document.getElementById('mapLoading')?.hidden === true, null, { timeout: 30000 });
   console.log('OK: gyors országváltás');
 
   // DE: Teljes ország után keresés aktiválja a csoportot
-  await page.selectOption('#countrySelect', 'DE');
+  await page.click('.country-flag-button[data-country="DE"]');
   await page.waitForFunction(() => document.getElementById('mapLoading')?.hidden === true, null, { timeout: 30000 });
   await page.click('#showAllButton');
   await wait(300);
@@ -103,7 +103,7 @@ try {
   console.log('OK: Teljes ország utáni keresés aktivál csoportot');
 
   // HU keresés
-  await page.selectOption('#countrySelect', 'HU');
+  await page.click('.country-flag-button[data-country="HU"]');
   await page.waitForFunction(() => document.getElementById('mapLoading')?.hidden === true, null, { timeout: 30000 });
   await page.fill('#searchInput', '8600');
   await page.click('#searchButton');
