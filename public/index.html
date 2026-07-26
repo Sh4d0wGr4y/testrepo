@@ -7,6 +7,9 @@
   <meta name="description" content="F-TRANS irányítószám- és postai zóna kereső Magyarországhoz, Németországhoz és Olaszországhoz." />
   <title>F-TRANS Irányítószám-kereső</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/vendor/leaflet.css" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
@@ -66,6 +69,10 @@
           <label class="check-row" for="labelsToggle">
             <input id="labelsToggle" type="checkbox" checked />
             <span>Zónaszámok</span>
+          </label>
+          <label class="check-row check-row-sub" for="labelColorsToggle" id="labelColorsToggleRow">
+            <input id="labelColorsToggle" type="checkbox" />
+            <span>Színes zónaszámok</span>
           </label>
           <label class="check-row" for="citiesToggle">
             <input id="citiesToggle" type="checkbox" />
@@ -165,7 +172,7 @@
 
       <footer class="map-footer">
         <span id="dataStatus">Térképi adatok betöltése…</span>
-        <span>V3.3.12 · szűrhető kétpaneles nézet</span>
+        <span>V3.3.13 · szűrhető kétpaneles nézet</span>
       </footer>
     </main>
   </div>

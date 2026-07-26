@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.12';
+const APP_VERSION = '3.3.13';
 
 const CONFIG = {
   HU: {
@@ -20,18 +20,18 @@ const CONFIG = {
   }
 };
 
-const COLORS = ['#59b56d','#35a792','#32a8b3','#4f94cf','#687fd1','#8b72c3','#bf70aa','#d27678','#d98d55','#d3ac51'];
-// HU 1–9: jól elkülönülő, sorrendben olvasható színek (nem „random szivárvány”)
+const COLORS = ['#2f6fed','#0f9f8a','#2fbf71','#8bc34a','#e0b000','#e07a1f','#d94848','#c23d7a','#6b4fbf','#3d8ea8'];
+// HU 1–9: prémium „jewel” skála – mély, telített, sorrendben olvasható
 const HU_ZONE_COLORS = {
-  1: '#1d6fd8', // kék – Budapest
-  2: '#0f9f8a', // smaragdzöld
-  3: '#2fbf71', // élénkzöld
-  4: '#8bc34a', // lime
-  5: '#f0c419', // sárga
-  6: '#f08a24', // narancs
-  7: '#e4572e', // vörösnarancs
-  8: '#c73e6c', // magenta
-  9: '#7b3fa0'  // lila
+  1: '#1f5fd6', // zafír
+  2: '#0c8f86', // smaragdtenger
+  3: '#1aa86a', // smaragd
+  4: '#6fad2e', // olíva-lime
+  5: '#d4a017', // arany
+  6: '#d97706', // réz
+  7: '#c2410c', // borostyán-vörös
+  8: '#be185d', // rubin-rózsa
+  9: '#5b4fcf'  // ametiszt (csak a skála vége)
 };
 const HISTORY_KEY = 'ftrans-postcode-history-v3';
 const THEME_KEY = 'ftrans-postcode-theme-v3';
@@ -147,6 +147,7 @@ const CITY_DATA = {
 const CITIES_KEY = 'ftrans-show-cities-v3';
 const COLORS_KEY = 'ftrans-show-colors-v3';
 const LABELS_KEY = 'ftrans-show-labels-v3';
+const LABEL_COLORS_KEY = 'ftrans-show-label-colors-v3';
 
 function readFlag(key, fallback) {
   try {
@@ -168,12 +169,14 @@ function readShowColors() { return readFlag(COLORS_KEY, true); }
 function saveShowColors() { saveFlag(COLORS_KEY, state.showZoneColors); }
 function readShowLabels() { return readFlag(LABELS_KEY, true); }
 function saveShowLabels() { saveFlag(LABELS_KEY, state.showZoneLabels); }
+function readShowLabelColors() { return readFlag(LABEL_COLORS_KEY, false); }
+function saveShowLabelColors() { saveFlag(LABEL_COLORS_KEY, state.showLabelColors); }
 
 const $ = (id) => document.getElementById(id);
 const elements = {
   countryFlags: $('countryFlags'), searchForm: $('searchForm'), searchInput: $('searchInput'),
   inputHelp: $('inputHelp'), rangeGrid: $('rangeGrid'), quickGrid: $('quickGrid'), quickEmpty: $('quickEmpty'),
-  showAllButton: $('showAllButton'), clearFiltersButton: $('clearFiltersButton'), citiesToggle: $('citiesToggle'), colorsToggle: $('colorsToggle'), labelsToggle: $('labelsToggle'), fsCountryFlags: $('fsCountryFlags'),
+  showAllButton: $('showAllButton'), clearFiltersButton: $('clearFiltersButton'), citiesToggle: $('citiesToggle'), colorsToggle: $('colorsToggle'), labelsToggle: $('labelsToggle'), labelColorsToggle: $('labelColorsToggle'), labelColorsToggleRow: $('labelColorsToggleRow'), fsCountryFlags: $('fsCountryFlags'),
   historyList: $('historyList'), historyEmpty: $('historyEmpty'), clearHistoryButton: $('clearHistoryButton'),
   countryName: $('countryName'), mapTitle: $('mapTitle'), mapSubtitle: $('mapSubtitle'), mapLoading: $('mapLoading'), loadingText: $('loadingText'),
   retryButton: $('retryButton'),
@@ -198,6 +201,7 @@ const state = {
   showCities: readShowCities(),
   showZoneColors: readShowColors(),
   showZoneLabels: readShowLabels(),
+  showLabelColors: readShowLabelColors(),
   currentResult: null, lastSuccessfulResult: null,
   dataCache: new Map(), loadToken: 0, controller: null,
   history: readHistory(), manifest: null, lastLoadError: null
@@ -283,15 +287,55 @@ function colorFor(prefix, country = state.country) {
   if (digits === 1) {
     return HU_ZONE_COLORS[n] || HU_ZONE_COLORS[1];
   }
-  // DE/IT: 0 → legnagyobb szám folyamatos skála (kék → zöld → sárga → narancs → piros → magenta)
-  const t = Math.min(1, n / 99);
-  const hue = 210 - (t * 270);
-  const hueNorm = ((hue % 360) + 360) % 360;
-  return `hsl(${hueNorm.toFixed(1)} 70% 46%)`;
+  // DE/IT: 00→99 prémium folyamatos ramp (zafír → smaragd → arany → réz → rubin → ametiszt)
+  const stops = [
+    [0, [31, 95, 214]],
+    [16, [12, 143, 134]],
+    [33, [26, 168, 106]],
+    [50, [212, 160, 23]],
+    [66, [217, 119, 6]],
+    [83, [194, 65, 12]],
+    [100, [91, 79, 207]]
+  ];
+  const t = Math.min(100, (n / 99) * 100);
+  let a = stops[0];
+  let b = stops[stops.length - 1];
+  for (let i = 0; i < stops.length - 1; i += 1) {
+    if (t >= stops[i][0] && t <= stops[i + 1][0]) {
+      a = stops[i];
+      b = stops[i + 1];
+      break;
+    }
+  }
+  const span = Math.max(1, b[0] - a[0]);
+  const u = (t - a[0]) / span;
+  const mix = (x, y) => Math.round(x + (y - x) * u);
+  const r = mix(a[1][0], b[1][0]);
+  const g = mix(a[1][1], b[1][1]);
+  const bl = mix(a[1][2], b[1][2]);
+  return `rgb(${r}, ${g}, ${bl})`;
 }
 
 function zoneFillColor(prefix) {
-  return state.showZoneColors ? colorFor(prefix) : '#9aaab0';
+  return state.showZoneColors ? colorFor(prefix) : '#8b9790';
+}
+
+function shadeColor(hexOrRgb, amount) {
+  const m = String(hexOrRgb).match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/i);
+  let r;
+  let g;
+  let b;
+  if (m) {
+    r = Number(m[1]); g = Number(m[2]); b = Number(m[3]);
+  } else {
+    const h = String(hexOrRgb).replace('#', '');
+    if (h.length !== 6) return hexOrRgb;
+    r = Number.parseInt(h.slice(0, 2), 16);
+    g = Number.parseInt(h.slice(2, 4), 16);
+    b = Number.parseInt(h.slice(4, 6), 16);
+  }
+  const adj = (c) => Math.max(0, Math.min(255, Math.round(c + (amount * 255))));
+  return `rgb(${adj(r)}, ${adj(g)}, ${adj(b)})`;
 }
 function inActiveRange(prefix) {
   if (!state.activeRange) return true;
@@ -321,12 +365,12 @@ function polygonStyle(feature) {
       interactive: false
     };
   }
-  const baseFill = state.showZoneColors ? (selected ? 0.92 : (hasSelection ? 0.16 : 0.55)) : (selected ? 0.55 : (hasSelection ? 0.08 : 0.18));
+  const baseFill = state.showZoneColors ? (selected ? 0.88 : (hasSelection ? 0.18 : 0.58)) : (selected ? 0.42 : (hasSelection ? 0.06 : 0.12));
   return {
     renderer: svgRenderer,
-    color: selected ? '#1faa45' : (state.showZoneColors ? 'rgba(20, 40, 28, 0.35)' : 'rgba(40, 55, 48, 0.45)'),
-    weight: selected ? 3.4 : (hasSelection ? 0.7 : 1.05),
-    opacity: selected ? 1 : (hasSelection ? 0.35 : 0.75),
+    color: selected ? '#0f7a38' : (state.showZoneColors ? shadeColor(fill, -0.28) : 'rgba(40, 55, 48, 0.5)'),
+    weight: selected ? 3.2 : (hasSelection ? 0.75 : 1.15),
+    opacity: selected ? 1 : (hasSelection ? 0.4 : 0.82),
     fillColor: fill,
     fillOpacity: baseFill,
     lineCap: 'round',
@@ -704,13 +748,32 @@ function buildLabels() {
     if (collides && !item.selected) continue;
     occupied.push(pixel);
     const muted = hasSelection && !item.selected;
+    const zoneColor = colorFor(item.prefix);
+    const colored = Boolean(state.showLabelColors);
+    const style = colored
+      ? `--zone-color:${zoneColor};--zone-color-deep:${shadeColor(zoneColor, -0.18)};`
+      : '';
     const icon = L.divIcon({
-      className: `zone-label${item.selected ? ' is-selected' : ''}${muted ? ' is-muted' : ''}`,
-      html: `<span>${item.prefix}</span>`,
+      className: `zone-label${item.selected ? ' is-selected' : ''}${muted ? ' is-muted' : ''}${colored ? ' is-colored' : ''}`,
+      html: `<span style="${style}">${item.prefix}</span>`,
       iconSize: null,
       iconAnchor: [15, 12]
     });
     L.marker(item.latLng, { icon, interactive: false, keyboard: false, pane: 'zoneLabelPane' }).addTo(state.labels);
+  }
+}
+
+function syncLabelColorToggle() {
+  const row = elements.labelColorsToggleRow;
+  const input = elements.labelColorsToggle;
+  if (!row || !input) return;
+  const enabled = Boolean(state.showZoneLabels);
+  row.classList.toggle('is-disabled', !enabled);
+  input.disabled = !enabled;
+  if (!enabled && input.checked) {
+    input.checked = false;
+    state.showLabelColors = false;
+    saveShowLabelColors();
   }
 }
 
@@ -1506,6 +1569,19 @@ function bindEvents() {
     elements.labelsToggle.addEventListener('change', () => {
       state.showZoneLabels = Boolean(elements.labelsToggle.checked);
       saveShowLabels();
+      syncLabelColorToggle();
+      buildLabels();
+    });
+  }
+  if (elements.labelColorsToggle) {
+    elements.labelColorsToggle.checked = state.showLabelColors;
+    elements.labelColorsToggle.addEventListener('change', () => {
+      if (!state.showZoneLabels) {
+        elements.labelColorsToggle.checked = false;
+        return;
+      }
+      state.showLabelColors = Boolean(elements.labelColorsToggle.checked);
+      saveShowLabelColors();
       buildLabels();
     });
   }
@@ -1575,6 +1651,8 @@ async function init() {
   if (elements.citiesToggle) elements.citiesToggle.checked = state.showCities;
   if (elements.colorsToggle) elements.colorsToggle.checked = state.showZoneColors;
   if (elements.labelsToggle) elements.labelsToggle.checked = state.showZoneLabels;
+  if (elements.labelColorsToggle) elements.labelColorsToggle.checked = state.showLabelColors;
+  syncLabelColorToggle();
   syncCountryFlags();
   updateFullscreenFlags();
   updateLegend();

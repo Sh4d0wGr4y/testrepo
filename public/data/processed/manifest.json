@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.12",
+  "appVersion": "3.3.13",
   "packagedAt": "2026-07-26T09:30:00.000Z",
-  "notes": "V3.3.12: more cities, layer toggles, ctrl multi-select, esc, fs flags, sequential DE/IT colors, clearer clear-filters."
+  "notes": "V3.3.13: optional colored zone numbers; premium palette + UI polish."
 }

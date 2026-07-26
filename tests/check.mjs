@@ -44,7 +44,7 @@ for (const rel of REQUIRED_FILES) {
 
 const worker = fs.readFileSync(path.join(root, 'src/index.js'), 'utf8');
 assert.match(worker, /__health/);
-assert.match(worker, /APP_VERSION = '3\.3\.12'/);
+assert.match(worker, /APP_VERSION = '3\.3\.13'/);
 ok('worker /__health és verzió');
 
 const app = fs.readFileSync(path.join(publicDir, 'app.js'), 'utf8');
@@ -63,7 +63,9 @@ for (const needle of [
   'detailPostcodeLabel',
   'selectedPrefixes',
   'colorsToggle',
-  'updateFullscreenFlags'
+  'updateFullscreenFlags',
+  'showLabelColors',
+  'syncLabelColorToggle'
 ]) {
   assert.ok(app.includes(needle), `app.js hiányzó rész: ${needle}`);
 }
@@ -78,6 +80,7 @@ assert.ok(indexHtml.includes('country-flag-button'));
 assert.ok(indexHtml.includes('citiesToggle'));
 assert.ok(indexHtml.includes('colorsToggle'));
 assert.ok(indexHtml.includes('labelsToggle'));
+assert.ok(indexHtml.includes('labelColorsToggle'));
 assert.ok(indexHtml.includes('fsCountryFlags'));
 assert.ok(indexHtml.includes('clear-filters-button'));
 assert.ok(!indexHtml.includes('systemStatus'));
@@ -91,7 +94,7 @@ ok('ország zászlók, városok pipa, szűrő törlés');
 
 
 const manifest = JSON.parse(fs.readFileSync(path.join(publicDir, 'data/processed/manifest.json'), 'utf8'));
-assert.equal(manifest.appVersion, '3.3.12');
+assert.equal(manifest.appVersion, '3.3.13');
 ok('manifest appVersion');
 
 for (const [name, spec] of Object.entries(EXPECTED)) {
