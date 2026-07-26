@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.18",
+  "appVersion": "3.3.19",
   "packagedAt": "2026-07-26T14:20:00.000Z",
-  "notes": "V3.3.18: removed map color legend overlay."
+  "notes": "V3.3.19: larger fullscreen country picker with flag + country code."
 }

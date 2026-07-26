@@ -140,9 +140,18 @@
 
       <div class="map-stage" id="mapStage">
         <div class="fs-country-flags" id="fsCountryFlags" hidden role="group" aria-label="Ország váltása">
-          <button type="button" class="fs-flag-button" data-country="HU" title="Magyarország" aria-label="Magyarország">🇭🇺</button>
-          <button type="button" class="fs-flag-button" data-country="DE" title="Németország" aria-label="Németország">🇩🇪</button>
-          <button type="button" class="fs-flag-button" data-country="IT" title="Olaszország" aria-label="Olaszország">🇮🇹</button>
+          <button type="button" class="fs-flag-button" data-country="HU" title="Magyarország" aria-label="Magyarország (HU)">
+            <span class="fs-flag-emoji" aria-hidden="true">🇭🇺</span>
+            <span class="fs-flag-code">HU</span>
+          </button>
+          <button type="button" class="fs-flag-button" data-country="DE" title="Németország" aria-label="Németország (DE)">
+            <span class="fs-flag-emoji" aria-hidden="true">🇩🇪</span>
+            <span class="fs-flag-code">DE</span>
+          </button>
+          <button type="button" class="fs-flag-button" data-country="IT" title="Olaszország" aria-label="Olaszország (IT)">
+            <span class="fs-flag-emoji" aria-hidden="true">🇮🇹</span>
+            <span class="fs-flag-code">IT</span>
+          </button>
         </div>
         <div id="map" aria-label="Interaktív postai zónatérkép"></div>
 
@@ -172,7 +181,7 @@
 
       <footer class="map-footer">
         <span id="dataStatus">Térképi adatok betöltése…</span>
-        <span>V3.3.18 · szűrhető kétpaneles nézet</span>
+        <span>V3.3.19 · szűrhető kétpaneles nézet</span>
       </footer>
     </main>
   </div>

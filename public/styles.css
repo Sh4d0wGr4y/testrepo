@@ -400,41 +400,85 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .fs-country-flags {
   position: absolute;
   z-index: 1200;
-  top: 14px;
+  top: 18px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 8px;
-  padding: 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.92);
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.94);
   border: 1px solid rgba(30, 50, 38, 0.14);
-  box-shadow: 0 10px 28px rgba(20, 40, 28, 0.18);
+  box-shadow: 0 14px 36px rgba(20, 40, 28, 0.20);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 .fs-country-flags[hidden] { display: none !important; }
 .fs-flag-button {
-  width: 46px;
-  height: 46px;
+  min-width: 92px;
+  min-height: 72px;
+  padding: 10px 14px 8px;
   border: 1px solid transparent;
-  border-radius: 50%;
+  border-radius: 16px;
   background: transparent;
-  font-size: 1.55rem;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   line-height: 1;
-  transition: transform .14s ease, background .14s ease, border-color .14s ease;
+  color: var(--text);
+  transition: transform .14s ease, background .14s ease, border-color .14s ease, box-shadow .14s ease;
+}
+.fs-flag-emoji {
+  font-size: 2.15rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(20, 40, 28, 0.12));
+}
+.fs-flag-code {
+  font-family: var(--font-ui);
+  font-size: 0.92rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  color: var(--muted);
 }
 .fs-flag-button:hover {
-  transform: translateY(-2px) scale(1.06);
+  transform: translateY(-2px);
   background: var(--green-soft);
   border-color: var(--green);
+}
+.fs-flag-button:hover .fs-flag-code,
+.fs-flag-button.is-active .fs-flag-code {
+  color: var(--green-dark);
 }
 .fs-flag-button.is-active {
   background: var(--green-soft);
   border-color: var(--green);
-  box-shadow: 0 0 0 2px rgba(32, 139, 57, 0.15);
+  box-shadow: 0 0 0 2px rgba(32, 139, 57, 0.16);
 }
 html[data-theme='dark'] .fs-country-flags {
-  background: rgba(22, 32, 26, 0.92);
+  background: rgba(22, 32, 26, 0.94);
   border-color: rgba(70, 95, 78, 0.55);
+}
+html[data-theme='dark'] .fs-flag-code { color: #a9b7ae; }
+html[data-theme='dark'] .fs-flag-button:hover .fs-flag-code,
+html[data-theme='dark'] .fs-flag-button.is-active .fs-flag-code {
+  color: #d7f0de;
+}
+
+@media (max-width: 580px) {
+  .fs-country-flags {
+    gap: 8px;
+    padding: 10px;
+    top: 12px;
+  }
+  .fs-flag-button {
+    min-width: 74px;
+    min-height: 64px;
+    padding: 8px 10px 6px;
+  }
+  .fs-flag-emoji { font-size: 1.85rem; }
+  .fs-flag-code { font-size: 0.82rem; }
 }
 
 .map-stage {
