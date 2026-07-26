@@ -58,11 +58,21 @@
 
       <section class="control-section" aria-labelledby="mapViewTitle">
         <div class="section-head"><h2 id="mapViewTitle">Térkép nézete</h2></div>
-        <label class="check-row" for="citiesToggle">
-          <input id="citiesToggle" type="checkbox" checked />
-          <span>Nagyvárosok megjelenítése</span>
-        </label>
-        <button class="secondary-button full-width" id="clearFiltersButton" type="button">Összes szűrő törlése</button>
+        <div class="layer-toggles" role="group" aria-label="Rétegek">
+          <label class="check-row" for="colorsToggle">
+            <input id="colorsToggle" type="checkbox" checked />
+            <span>Zónaszínezés</span>
+          </label>
+          <label class="check-row" for="labelsToggle">
+            <input id="labelsToggle" type="checkbox" checked />
+            <span>Zónaszámok</span>
+          </label>
+          <label class="check-row" for="citiesToggle">
+            <input id="citiesToggle" type="checkbox" />
+            <span>Nagyvárosok</span>
+          </label>
+        </div>
+        <button class="clear-filters-button full-width" id="clearFiltersButton" type="button">Összes szűrő törlése</button>
       </section>
 
       <section class="control-section" aria-labelledby="rangeTitle">
@@ -88,10 +98,6 @@
         <p class="empty-note" id="historyEmpty">Még nincs korábbi keresés.</p>
       </section>
 
-      <footer class="sidebar-status">
-        <span class="status-dot" aria-hidden="true"></span>
-        <span id="systemStatus">Rendszer állapota: Rendben</span>
-      </footer>
     </aside>
 
     <main class="map-panel" id="mainContent">
@@ -109,6 +115,11 @@
       </header>
 
       <div class="map-stage" id="mapStage">
+        <div class="fs-country-flags" id="fsCountryFlags" hidden role="group" aria-label="Ország váltása">
+          <button type="button" class="fs-flag-button" data-country="HU" title="Magyarország" aria-label="Magyarország">🇭🇺</button>
+          <button type="button" class="fs-flag-button" data-country="DE" title="Németország" aria-label="Németország">🇩🇪</button>
+          <button type="button" class="fs-flag-button" data-country="IT" title="Olaszország" aria-label="Olaszország">🇮🇹</button>
+        </div>
         <div id="map" aria-label="Interaktív postai zónatérkép"></div>
 
         <div class="map-loading" id="mapLoading" role="status" aria-live="polite">
@@ -154,7 +165,7 @@
 
       <footer class="map-footer">
         <span id="dataStatus">Térképi adatok betöltése…</span>
-        <span>V3.3.11 · szűrhető kétpaneles nézet</span>
+        <span>V3.3.12 · szűrhető kétpaneles nézet</span>
       </footer>
     </main>
   </div>
@@ -180,11 +191,9 @@
         var loading = document.getElementById('mapLoading');
         var text = document.getElementById('loadingText');
         var retry = document.getElementById('retryButton');
-        var status = document.getElementById('systemStatus');
         if (text) text.textContent = 'A térképkönyvtár nem töltődött be.';
         if (loading) loading.hidden = false;
         if (retry) { retry.hidden = false; retry.onclick = function () { location.reload(); }; }
-        if (status) status.textContent = 'Rendszer állapota: Térképhiba';
       });
     }
   </script>

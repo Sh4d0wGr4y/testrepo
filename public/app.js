@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.11';
+const APP_VERSION = '3.3.12';
 
 const CONFIG = {
   HU: {
@@ -43,76 +43,137 @@ const LABEL_OVERRIDES = {
 const CITY_DATA = {
   HU: [
     ['Budapest', 47.4979, 19.0402],
+    ['Érd', 47.3651, 18.9060],
+    ['Vác', 47.7758, 19.1361],
+    ['Gödöllő', 47.6007, 19.3535],
+    ['Cegléd', 47.1727, 19.7962],
+    ['Tatabánya', 47.5692, 18.4048],
     ['Győr', 47.6875, 17.6504],
+    ['Mosonmagyaróvár', 47.8679, 17.2700],
     ['Sopron', 47.6817, 16.5845],
     ['Szombathely', 47.2307, 16.6218],
     ['Zalaegerszeg', 46.8417, 16.8416],
+    ['Nagykanizsa', 46.4530, 16.9910],
     ['Veszprém', 47.0933, 17.9115],
+    ['Pápa', 47.3300, 17.4674],
+    ['Ajka', 47.1001, 17.5580],
     ['Székesfehérvár', 47.1860, 18.4221],
+    ['Dunaújváros', 46.9640, 18.9350],
     ['Pécs', 46.0727, 18.2323],
     ['Kaposvár', 46.3594, 17.7968],
+    ['Szekszárd', 46.3470, 18.7060],
+    ['Baja', 46.1820, 18.9530],
     ['Kecskemét', 46.9062, 19.6913],
     ['Szeged', 46.2530, 20.1414],
+    ['Hódmezővásárhely', 46.4167, 20.3333],
     ['Békéscsaba', 46.6736, 21.0877],
     ['Szolnok', 47.1621, 20.1825],
     ['Debrecen', 47.5316, 21.6273],
     ['Nyíregyháza', 47.9558, 21.7167],
     ['Miskolc', 48.1031, 20.7784],
-    ['Eger', 47.9025, 20.3772]
+    ['Eger', 47.9025, 20.3772],
+    ['Salgótarján', 48.0987, 19.8045]
   ],
   DE: [
     ['Berlin', 52.5200, 13.4050],
     ['Hamburg', 53.5511, 9.9937],
     ['Bremen', 53.0793, 8.8017],
     ['Hannover', 52.3759, 9.7320],
+    ['Braunschweig', 52.2689, 10.5268],
+    ['Magdeburg', 52.1205, 11.6276],
     ['Dortmund', 51.5136, 7.4653],
+    ['Essen', 51.4556, 7.0116],
+    ['Duisburg', 51.4344, 6.7623],
+    ['Bochum', 51.4818, 7.2162],
     ['Düsseldorf', 51.2277, 6.7735],
     ['Köln', 50.9375, 6.9603],
+    ['Bonn', 50.7374, 7.0982],
+    ['Münster', 51.9607, 7.6261],
+    ['Bielefeld', 52.0302, 8.5325],
     ['Frankfurt', 50.1109, 8.6821],
+    ['Wiesbaden', 50.0782, 8.2398],
+    ['Mainz', 49.9929, 8.2473],
+    ['Mannheim', 49.4875, 8.4660],
+    ['Karlsruhe', 49.0069, 8.4037],
     ['Stuttgart', 48.7758, 9.1829],
+    ['Freiburg', 47.9990, 7.8421],
     ['München', 48.1351, 11.5820],
+    ['Augsburg', 48.3705, 10.8978],
     ['Nürnberg', 49.4521, 11.0767],
     ['Leipzig', 51.3397, 12.3731],
     ['Dresden', 51.0504, 13.7373],
-    ['Rostock', 54.0924, 12.0991]
+    ['Chemnitz', 50.8278, 12.9214],
+    ['Halle', 51.4960, 11.9680],
+    ['Erfurt', 50.9848, 11.0299],
+    ['Rostock', 54.0924, 12.0991],
+    ['Kiel', 54.3233, 10.1228],
+    ['Lübeck', 53.8655, 10.6866],
+    ['Potsdam', 52.3906, 13.0645],
+    ['Saarbrücken', 49.2402, 6.9969]
   ],
   IT: [
     ['Milano', 45.4642, 9.1900],
+    ['Brescia', 45.5416, 10.2118],
+    ['Bergamo', 45.6983, 9.6773],
     ['Torino', 45.0703, 7.6869],
     ['Genova', 44.4056, 8.9463],
     ['Venezia', 45.4408, 12.3155],
+    ['Padova', 45.4064, 11.8768],
+    ['Verona', 45.4384, 10.9916],
+    ['Trieste', 45.6495, 13.7768],
     ['Bologna', 44.4949, 11.3426],
+    ['Modena', 44.6471, 10.9252],
+    ['Parma', 44.8015, 10.3279],
     ['Firenze', 43.7696, 11.2558],
+    ['Prato', 43.8777, 11.1022],
+    ['Pisa', 43.7228, 10.4017],
+    ['Livorno', 43.5485, 10.3106],
+    ['Perugia', 43.1107, 12.3908],
+    ['Ancona', 43.6158, 13.5189],
     ['Roma', 41.9028, 12.4964],
+    ['Pescara', 42.4618, 14.2160],
     ['Napoli', 40.8518, 14.2681],
+    ['Salerno', 40.6824, 14.7681],
     ['Bari', 41.1171, 16.8719],
+    ['Taranto', 40.4644, 17.2470],
     ['Palermo', 38.1157, 13.3615],
+    ['Messina', 38.1938, 15.5540],
     ['Catania', 37.5079, 15.0830],
+    ['Reggio Calabria', 38.1113, 15.6473],
     ['Cagliari', 39.2238, 9.1217]
   ]
 };
 
 const CITIES_KEY = 'ftrans-show-cities-v3';
+const COLORS_KEY = 'ftrans-show-colors-v3';
+const LABELS_KEY = 'ftrans-show-labels-v3';
 
-function readShowCities() {
+function readFlag(key, fallback) {
   try {
-    const value = localStorage.getItem(CITIES_KEY);
-    if (value === null) return false; // alapból nincs város-szűrő / jelölés
+    const value = localStorage.getItem(key);
+    if (value === null) return fallback;
     return value === '1';
   } catch {
-    return false;
+    return fallback;
   }
 }
 
-function saveShowCities() {
-  try { localStorage.setItem(CITIES_KEY, state.showCities ? '1' : '0'); } catch {}
+function saveFlag(key, on) {
+  try { localStorage.setItem(key, on ? '1' : '0'); } catch {}
 }
+
+function readShowCities() { return readFlag(CITIES_KEY, false); }
+function saveShowCities() { saveFlag(CITIES_KEY, state.showCities); }
+function readShowColors() { return readFlag(COLORS_KEY, true); }
+function saveShowColors() { saveFlag(COLORS_KEY, state.showZoneColors); }
+function readShowLabels() { return readFlag(LABELS_KEY, true); }
+function saveShowLabels() { saveFlag(LABELS_KEY, state.showZoneLabels); }
 
 const $ = (id) => document.getElementById(id);
 const elements = {
   countryFlags: $('countryFlags'), searchForm: $('searchForm'), searchInput: $('searchInput'),
   inputHelp: $('inputHelp'), rangeGrid: $('rangeGrid'), quickGrid: $('quickGrid'), quickEmpty: $('quickEmpty'),
-  showAllButton: $('showAllButton'), clearFiltersButton: $('clearFiltersButton'), citiesToggle: $('citiesToggle'),
+  showAllButton: $('showAllButton'), clearFiltersButton: $('clearFiltersButton'), citiesToggle: $('citiesToggle'), colorsToggle: $('colorsToggle'), labelsToggle: $('labelsToggle'), fsCountryFlags: $('fsCountryFlags'),
   historyList: $('historyList'), historyEmpty: $('historyEmpty'), clearHistoryButton: $('clearHistoryButton'),
   countryName: $('countryName'), mapTitle: $('mapTitle'), mapSubtitle: $('mapSubtitle'), mapLoading: $('mapLoading'), loadingText: $('loadingText'),
   retryButton: $('retryButton'),
@@ -122,7 +183,7 @@ const elements = {
   detailRegionLabel: $('detailRegionLabel'), resultMessage: $('resultMessage'), mapsLink: $('mapsLink'),
   fitCountryButton: $('fitCountryButton'), clearSelectionButton: $('clearSelectionButton'), fullscreenButton: $('fullscreenButton'),
   themeButton: $('themeButton'), infoButton: $('infoButton'), infoDialog: $('infoDialog'), toast: $('toast'), dataStatus: $('dataStatus'),
-  systemStatus: $('systemStatus'), mapLegend: $('mapLegend'), legendMin: $('legendMin'), legendMax: $('legendMax'),
+  mapLegend: $('mapLegend'), legendMin: $('legendMin'), legendMax: $('legendMax'),
   legendTitle: $('legendTitle'), legendHint: $('legendHint'), legendCityRow: $('legendCityRow')
 };
 
@@ -131,11 +192,30 @@ if (typeof L === 'undefined') {
 }
 
 const state = {
-  country: 'HU', layer: null, labels: L.layerGroup(), cities: L.layerGroup(), groups: new Map(), features: new Map(), selectedPrefix: null,
-  activeRange: null, showCities: readShowCities(), currentResult: null, lastSuccessfulResult: null,
+  country: 'HU', layer: null, labels: L.layerGroup(), cities: L.layerGroup(), groups: new Map(), features: new Map(),
+  selectedPrefixes: new Set(),
+  activeRange: null,
+  showCities: readShowCities(),
+  showZoneColors: readShowColors(),
+  showZoneLabels: readShowLabels(),
+  currentResult: null, lastSuccessfulResult: null,
   dataCache: new Map(), loadToken: 0, controller: null,
   history: readHistory(), manifest: null, lastLoadError: null
 };
+
+function isSelectedPrefix(prefix) {
+  return state.selectedPrefixes.has(String(prefix));
+}
+function hasZoneSelection() {
+  return state.selectedPrefixes.size > 0;
+}
+function primarySelectedPrefix() {
+  if (!state.selectedPrefixes.size) return null;
+  return [...state.selectedPrefixes][state.selectedPrefixes.size - 1];
+}
+function setSingleSelection(prefix) {
+  state.selectedPrefixes = new Set(prefix == null || prefix === '' ? [] : [String(prefix)]);
+}
 
 const svgRenderer = L.svg({ padding: 0.65 });
 const map = L.map('map', {
@@ -203,11 +283,15 @@ function colorFor(prefix, country = state.country) {
   if (digits === 1) {
     return HU_ZONE_COLORS[n] || HU_ZONE_COLORS[1];
   }
-  // DE/IT: szomszédos számok távoli hue-t kapnak (golden angle)
-  const hue = (n * 137.508) % 360;
-  const sat = 72 + (n % 3) * 6;
-  const light = 44 + (n % 5) * 3;
-  return `hsl(${hue.toFixed(1)} ${sat}% ${light}%)`;
+  // DE/IT: 0 → legnagyobb szám folyamatos skála (kék → zöld → sárga → narancs → piros → magenta)
+  const t = Math.min(1, n / 99);
+  const hue = 210 - (t * 270);
+  const hueNorm = ((hue % 360) + 360) % 360;
+  return `hsl(${hueNorm.toFixed(1)} 70% 46%)`;
+}
+
+function zoneFillColor(prefix) {
+  return state.showZoneColors ? colorFor(prefix) : '#9aaab0';
 }
 function inActiveRange(prefix) {
   if (!state.activeRange) return true;
@@ -221,11 +305,10 @@ function rangeForPrefix(country, prefix) {
 
 function polygonStyle(feature) {
   const prefix = String(feature.properties?.prefix ?? '');
-  const selected = prefix === state.selectedPrefix;
-  const hasSelection = Boolean(state.selectedPrefix);
+  const selected = isSelectedPrefix(prefix);
+  const hasSelection = hasZoneSelection();
   const visible = inActiveRange(prefix) || selected;
-  const fill = colorFor(prefix);
-  // Szűrt nézetben a nem ide tartozó zónák teljesen eltűnnek (nem csak halványak).
+  const fill = zoneFillColor(prefix);
   if (!visible) {
     return {
       renderer: svgRenderer,
@@ -238,14 +321,14 @@ function polygonStyle(feature) {
       interactive: false
     };
   }
-  // Kijelöléskor csak a választott zóna legyen erős; a többi láthatóan háttérbe kerül.
+  const baseFill = state.showZoneColors ? (selected ? 0.92 : (hasSelection ? 0.16 : 0.55)) : (selected ? 0.55 : (hasSelection ? 0.08 : 0.18));
   return {
     renderer: svgRenderer,
-    color: selected ? '#1faa45' : 'rgba(20, 40, 28, 0.35)',
+    color: selected ? '#1faa45' : (state.showZoneColors ? 'rgba(20, 40, 28, 0.35)' : 'rgba(40, 55, 48, 0.45)'),
     weight: selected ? 3.4 : (hasSelection ? 0.7 : 1.05),
     opacity: selected ? 1 : (hasSelection ? 0.35 : 0.75),
     fillColor: fill,
-    fillOpacity: selected ? 0.92 : (hasSelection ? 0.16 : 0.55),
+    fillOpacity: baseFill,
     lineCap: 'round',
     lineJoin: 'round',
     className: selected ? 'ftrans-zone-path is-selected' : (hasSelection ? 'ftrans-zone-path is-dimmed' : 'ftrans-zone-path'),
@@ -258,20 +341,17 @@ function showLoading(text) {
   elements.mapLoading.hidden = false;
   elements.mapLoading.classList.remove('is-error');
   if (elements.retryButton) elements.retryButton.hidden = true;
-  elements.systemStatus.textContent = 'Rendszer állapota: Betöltés…';
 }
 function showLoadError(message) {
   elements.loadingText.textContent = message;
   elements.mapLoading.hidden = false;
   elements.mapLoading.classList.add('is-error');
   if (elements.retryButton) elements.retryButton.hidden = false;
-  elements.systemStatus.textContent = 'Rendszer állapota: Adathiba';
 }
 function hideLoading() {
   elements.mapLoading.hidden = true;
   elements.mapLoading.classList.remove('is-error');
   if (elements.retryButton) elements.retryButton.hidden = true;
-  elements.systemStatus.textContent = 'Rendszer állapota: Rendben';
 }
 function toast(message) {
   elements.toast.textContent = message;
@@ -328,7 +408,7 @@ function buildRangeButtons() {
     button.setAttribute('aria-pressed', String(state.activeRange?.min === range.min));
     button.addEventListener('click', () => {
       state.activeRange = range;
-      state.selectedPrefix = null;
+      state.selectedPrefixes.clear();
       clearPlaceMarker();
       hideResult();
       restyleMap();
@@ -349,10 +429,10 @@ function buildQuickButtons() {
   for (const prefix of filtered) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = `quick-button${prefix === state.selectedPrefix ? ' is-active' : ''}`;
+    button.className = `quick-button${isSelectedPrefix(prefix) ? ' is-active' : ''}`;
     button.textContent = prefix;
-    button.setAttribute('aria-pressed', String(prefix === state.selectedPrefix));
-    button.addEventListener('click', () => selectPrefix(prefix, true));
+    button.setAttribute('aria-pressed', String(isSelectedPrefix(prefix)));
+    button.addEventListener('click', (event) => selectPrefix(prefix, true, '', { additive: event.ctrlKey || event.metaKey }));
     elements.quickGrid.appendChild(button);
   }
 }
@@ -364,7 +444,7 @@ function restyleMap() {
     if (!feature) return;
     layer.setStyle(polygonStyle(feature));
     const prefix = String(feature.properties?.prefix ?? '');
-    if (prefix === state.selectedPrefix && layer.bringToFront) layer.bringToFront();
+    if (isSelectedPrefix(prefix) && layer.bringToFront) layer.bringToFront();
   });
 }
 
@@ -606,15 +686,15 @@ function featureLabelPoint(feature) {
 
 function buildLabels() {
   state.labels.clearLayers();
-  if (!state.features.size) return;
+  if (!state.showZoneLabels || !state.features.size) return;
   const forceRange = Boolean(state.activeRange);
-  const hasSelection = Boolean(state.selectedPrefix);
+  const hasSelection = hasZoneSelection();
   const candidates = [];
   for (const [prefix, feature] of state.features.entries()) {
-    if (state.activeRange && !inActiveRange(prefix) && prefix !== state.selectedPrefix) continue;
+    if (state.activeRange && !inActiveRange(prefix) && !isSelectedPrefix(prefix)) continue;
     const point = featureLabelPoint(feature);
     if (!point) continue;
-    candidates.push({ prefix, latLng: L.latLng(point[1], point[0]), selected: prefix === state.selectedPrefix });
+    candidates.push({ prefix, latLng: L.latLng(point[1], point[0]), selected: isSelectedPrefix(prefix) });
   }
   candidates.sort((a, b) => Number(b.selected) - Number(a.selected) || prefixNumber(a.prefix) - prefixNumber(b.prefix));
   const occupied = [];
@@ -689,14 +769,15 @@ function createGeoLayer(data, nextCountry, nextGroups, nextFeatures) {
             if (typeof target.blur === 'function') target.blur();
           }
         } catch {}
-        selectPrefix(prefix, false);
+        const additive = Boolean(event.originalEvent?.ctrlKey || event.originalEvent?.metaKey);
+        selectPrefix(prefix, false, '', { additive });
       });
       polygon.on('mouseover', (event) => {
-        if (prefix === state.selectedPrefix) return;
+        if (isSelectedPrefix(prefix)) return;
         event.target.setStyle({
           weight: 2.2,
           color: '#1faa45',
-          fillOpacity: state.selectedPrefix ? 0.28 : 0.7,
+          fillOpacity: hasZoneSelection() ? 0.28 : 0.7,
           opacity: 0.9
         });
         // Ne hozzuk előre a hovered zónát a kijelölt fölé — különben a váltás beragadhat.
@@ -761,7 +842,7 @@ async function loadCountry(nextCountry, options = {}) {
     const nextFeatures = new Map();
     state.country = nextCountry;
     state.activeRange = null; // induláskor teljes ország, ne az első csoport
-    state.selectedPrefix = null;
+    state.selectedPrefixes.clear();
     const newLayer = createGeoLayer(data, nextCountry, nextGroups, nextFeatures);
 
     removeActiveLayer();
@@ -817,22 +898,22 @@ function updateLegend() {
   const hu = state.country === 'HU';
   if (elements.legendMin) elements.legendMin.textContent = hu ? '1' : '00';
   if (elements.legendMax) elements.legendMax.textContent = hu ? '9' : '99';
-  if (elements.legendTitle) elements.legendTitle.textContent = hu ? 'Zónaszínek (1–9)' : 'Zónaszínek';
+  if (elements.legendTitle) elements.legendTitle.textContent = hu ? 'Zónaszínek (1–9)' : 'Zónaszínek (00→99)';
   if (elements.legendHint) {
     elements.legendHint.textContent = hu
       ? 'Minden szám saját, állandó színt kap.'
-      : 'A szomszédos zónák szándékosan más színt kapnak.';
+      : 'A színek 00-tól a legnagyobb számig folyamatosan változnak.';
   }
   if (elements.legendCityRow) elements.legendCityRow.hidden = !state.showCities;
   if (elements.mapLegend) {
-    elements.mapLegend.hidden = false;
+    elements.mapLegend.hidden = !state.showZoneColors && !state.showCities;
     elements.mapLegend.dataset.scale = hu ? 'hu' : 'multi';
   }
   const chips = document.getElementById('legendChips');
   const gradientRow = document.querySelector('.legend-scale-row');
   if (chips) {
     chips.replaceChildren();
-    if (hu) {
+    if (hu && state.showZoneColors) {
       chips.hidden = false;
       for (let i = 1; i <= 9; i += 1) {
         const item = document.createElement('span');
@@ -845,20 +926,31 @@ function updateLegend() {
       chips.hidden = true;
     }
   }
-  if (gradientRow) gradientRow.hidden = hu;
+  if (gradientRow) gradientRow.hidden = hu || !state.showZoneColors;
   const gradient = document.querySelector('.legend-gradient');
-  if (gradient) gradient.hidden = hu;
-  if (elements.legendMin) elements.legendMin.hidden = hu;
-  if (elements.legendMax) elements.legendMax.hidden = hu;
+  if (gradient) gradient.hidden = hu || !state.showZoneColors;
+  if (elements.legendMin) elements.legendMin.hidden = hu || !state.showZoneColors;
+  if (elements.legendMax) elements.legendMax.hidden = hu || !state.showZoneColors;
 }
 
 function syncCountryFlags() {
-  if (!elements.countryFlags) return;
-  elements.countryFlags.querySelectorAll('[data-country]').forEach((button) => {
-    const active = button.dataset.country === state.country;
-    button.classList.toggle('is-active', active);
-    button.setAttribute('aria-pressed', String(active));
-  });
+  const sync = (root) => {
+    if (!root) return;
+    root.querySelectorAll('[data-country]').forEach((button) => {
+      const active = button.dataset.country === state.country;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+  };
+  sync(elements.countryFlags);
+  sync(elements.fsCountryFlags);
+}
+
+function updateFullscreenFlags() {
+  if (!elements.fsCountryFlags) return;
+  const active = Boolean(document.fullscreenElement === $('mapStage'));
+  elements.fsCountryFlags.hidden = !active;
+  if (active) syncCountryFlags();
 }
 
 function renderCities() {
@@ -947,15 +1039,28 @@ function fitCountry(animate = false) {
 }
 
 function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
-  // Ugyanarra a zónára kattintva / gombbal: kijelölés feloldása (lehessen „lekattintani”).
-  if (state.selectedPrefix === prefix && !fullCode && !options.force) {
+  const key = String(prefix);
+  const additive = Boolean(options.additive) && !fullCode;
+
+  if (additive) {
+    if (isSelectedPrefix(key)) state.selectedPrefixes.delete(key);
+    else state.selectedPrefixes.add(key);
+    if (!hasZoneSelection()) {
+      clearSelection();
+      toast('Kijelölés törölve.');
+      return;
+    }
+  } else if (isSelectedPrefix(key) && state.selectedPrefixes.size === 1 && !fullCode && !options.force) {
     clearSelection();
     toast('Kijelölés törölve.');
     return;
+  } else {
+    setSingleSelection(key);
   }
-  if (!state.groups.has(prefix)) {
+
+  if (!state.groups.has(key)) {
     showResult({
-      prefix,
+      prefix: key,
       postcode: fullCode,
       place: '',
       region: '',
@@ -964,10 +1069,9 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
     });
     return;
   }
+
   clearPlaceMarker();
-  state.selectedPrefix = prefix;
-  const range = rangeForPrefix(state.country, prefix);
-  // Csoportszűrőt csak explicit kérésre kapcsolunk (ne alapból).
+  const range = rangeForPrefix(state.country, key);
   if (range && options.activateRange) {
     state.activeRange = range;
   }
@@ -975,11 +1079,10 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
   buildRangeButtons();
   buildQuickButtons();
 
-  if (fit) {
-    const feature = state.features.get(prefix);
-    // Lazább zoom: maradjon hely a szomszédos zónákra is, hogy át lehessen kattintani.
+  if (fit && !additive) {
+    const feature = state.features.get(key);
     if (!fitFeature(feature, { maxZoom: state.country === 'HU' ? 7 : 8, padding: [72, 72] })) {
-      const bounds = L.featureGroup(state.groups.get(prefix)).getBounds();
+      const bounds = L.featureGroup(state.groups.get(key)).getBounds();
       if (bounds.isValid()) {
         map.fitBounds(bounds, { padding: [72, 72], maxZoom: state.country === 'HU' ? 7 : 8, animate: false });
       }
@@ -987,18 +1090,32 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
   }
   scheduleMapRefresh();
   setTimeout(buildLabels, 50);
-  showResult({
-    prefix,
-    postcode: fullCode,
-    place: '',
-    region: '',
-    verified: false,
-    message: 'A zóna ki van jelölve. Újabb zónára kattintva válthatsz; ugyanarra kattintva törlődik.'
-  });
+
+  const selected = [...state.selectedPrefixes].sort((a, b) => prefixNumber(a) - prefixNumber(b));
+  if (selected.length > 1) {
+    showResult({
+      prefix: primarySelectedPrefix(),
+      prefixes: selected,
+      postcode: '',
+      place: '',
+      region: '',
+      verified: false,
+      message: 'Több zóna kijelölve. Ctrl+kattintással adhatsz hozzá / vehetsz el; Esc törli.'
+    });
+  } else {
+    showResult({
+      prefix: key,
+      postcode: fullCode,
+      place: '',
+      region: '',
+      verified: false,
+      message: 'A zóna ki van jelölve. Ctrl+kattintással többet is kijelölhetsz; Esc törli.'
+    });
+  }
 }
 
 function clearSelection() {
-  state.selectedPrefix = null;
+  state.selectedPrefixes.clear();
   clearPlaceMarker();
   hideResult();
   restyleMap();
@@ -1187,15 +1304,16 @@ function showResult(result) {
   state.currentResult = result;
   elements.resultCard.hidden = false;
   const place = isPlaceResult(result);
+  const multi = !place && Array.isArray(result.prefixes) && result.prefixes.length > 1;
   const prefix = result.prefix ? String(result.prefix) : '';
-  const zoneCities = (!place && prefix) ? citiesInZone(prefix) : [];
-  const zoneRange = (!place && prefix) ? postcodeRangeForPrefix(prefix) : '';
+  const zoneCities = (!place && !multi && prefix) ? citiesInZone(prefix) : [];
+  const zoneRange = (!place && !multi && prefix) ? postcodeRangeForPrefix(prefix) : '';
 
-  elements.resultBadge.textContent = place ? 'Ellenőrzött találat' : 'Kiválasztott zóna';
-  elements.resultCode.textContent = result.postcode || prefix;
+  elements.resultBadge.textContent = place ? 'Ellenőrzött találat' : (multi ? 'Több zóna' : 'Kiválasztott zóna');
+  elements.resultCode.textContent = place ? (result.postcode || prefix) : (multi ? String(result.prefixes.length) : prefix);
   elements.resultPlace.textContent = place
     ? (result.place || `${prefix}-es postai zóna`)
-    : `${prefix}-es postai zóna`;
+    : (multi ? result.prefixes.join(', ') : `${prefix}-es postai zóna`);
   elements.resultRegion.textContent = result.region || cfg.name;
 
   if (place) {
@@ -1205,6 +1323,13 @@ function showResult(result) {
     elements.detailPostcode.textContent = result.postcode || '—';
     elements.detailPlace.textContent = result.place || '—';
     elements.detailRegion.textContent = result.region || cfg.name;
+  } else if (multi) {
+    if (elements.detailPostcodeLabel) elements.detailPostcodeLabel.textContent = 'Zónák';
+    if (elements.detailPlaceLabel) elements.detailPlaceLabel.textContent = 'Darab';
+    if (elements.detailRegionLabel) elements.detailRegionLabel.textContent = 'Ország';
+    elements.detailPostcode.textContent = result.prefixes.join(', ');
+    elements.detailPlace.textContent = `${result.prefixes.length} kijelölve`;
+    elements.detailRegion.textContent = cfg.name;
   } else {
     if (elements.detailPostcodeLabel) elements.detailPostcodeLabel.textContent = 'Tartomány';
     if (elements.detailPlaceLabel) elements.detailPlaceLabel.textContent = 'Nagyvárosok';
@@ -1219,9 +1344,7 @@ function showResult(result) {
   if (!result.message) {
     elements.resultMessage.textContent = place
       ? 'A teljes irányítószám települési adatait online ellenőriztük.'
-      : 'A zóna ki van jelölve. Újabb zónára kattintva válthatsz; ugyanarra kattintva törlődik.';
-  } else if (!place && (result.message.includes('zöld keret') || result.message.includes('kontúrt') || result.message.includes('Google Maps'))) {
-    elements.resultMessage.textContent = 'A zóna ki van jelölve. Újabb zónára kattintva válthatsz; ugyanarra kattintva törlődik.';
+      : 'A zóna ki van jelölve. Ctrl+kattintással többet is kijelölhetsz; Esc törli.';
   } else {
     elements.resultMessage.textContent = result.message;
   }
@@ -1314,7 +1437,7 @@ async function loadManifest() {
 
 function clearAllFilters() {
   state.activeRange = null;
-  state.selectedPrefix = null;
+  state.selectedPrefixes.clear();
   clearPlaceMarker();
   elements.searchInput.value = '';
   setInputMessage();
@@ -1348,7 +1471,7 @@ function bindEvents() {
   }
   elements.showAllButton.addEventListener('click', () => {
     state.activeRange = null;
-    state.selectedPrefix = null;
+    state.selectedPrefixes.clear();
     clearPlaceMarker();
     hideResult();
     restyleMap();
@@ -1369,10 +1492,35 @@ function bindEvents() {
       updateLegend();
     });
   }
+  if (elements.colorsToggle) {
+    elements.colorsToggle.checked = state.showZoneColors;
+    elements.colorsToggle.addEventListener('change', () => {
+      state.showZoneColors = Boolean(elements.colorsToggle.checked);
+      saveShowColors();
+      restyleMap();
+      updateLegend();
+    });
+  }
+  if (elements.labelsToggle) {
+    elements.labelsToggle.checked = state.showZoneLabels;
+    elements.labelsToggle.addEventListener('change', () => {
+      state.showZoneLabels = Boolean(elements.labelsToggle.checked);
+      saveShowLabels();
+      buildLabels();
+    });
+  }
+  if (elements.fsCountryFlags) {
+    elements.fsCountryFlags.querySelectorAll('[data-country]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const next = button.dataset.country;
+        if (!next || next === state.country) return;
+        loadCountry(next);
+      });
+    });
+  }
   elements.fitCountryButton.addEventListener('click', () => fitCountry(false));
   elements.clearSelectionButton.addEventListener('click', clearSelection);
   elements.resultCloseButton.addEventListener('click', () => {
-    // A × ne csak a kártyát rejtse el — oldja fel a zónakijelölést is.
     clearSelection();
   });
   elements.clearHistoryButton.addEventListener('click', () => {
@@ -1396,10 +1544,21 @@ function bindEvents() {
       loadCountry(state.country);
     });
   }
-  document.addEventListener('fullscreenchange', scheduleMapRefresh);
+  document.addEventListener('fullscreenchange', () => {
+    scheduleMapRefresh();
+    updateFullscreenFlags();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    if (elements.infoDialog?.open) return;
+    if (hasZoneSelection() || state.placeMarker || state.currentResult) {
+      clearSelection();
+      event.preventDefault();
+    }
+  });
   // Üres térképkattintás: kijelölés feloldása (a zónapoligonok stopPropagation-nel jönnek).
   map.on('click', () => {
-    if (state.selectedPrefix || state.placeMarker || state.currentResult) {
+    if (hasZoneSelection() || state.placeMarker || state.currentResult) {
       clearSelection();
     }
   });
@@ -1414,7 +1573,10 @@ async function init() {
   })();
   setTheme(savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
   if (elements.citiesToggle) elements.citiesToggle.checked = state.showCities;
+  if (elements.colorsToggle) elements.colorsToggle.checked = state.showZoneColors;
+  if (elements.labelsToggle) elements.labelsToggle.checked = state.showZoneLabels;
   syncCountryFlags();
+  updateFullscreenFlags();
   updateLegend();
   bindEvents();
   renderHistory();
