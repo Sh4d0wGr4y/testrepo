@@ -1,0 +1,52 @@
+name: Deploy F-TRANS V3.3 test Worker
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/ftrans-v3-3-63e5
+
+jobs:
+  deploy-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm test && npm run test:labels
+
+      - name: Deploy to test Worker only
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "Hiányzik a CLOUDFLARE_API_TOKEN GitHub secret."
+            exit 1
+          fi
+          npx wrangler deploy --name ftrans-iranyitoszam-terkep-v3-test
+
+      - name: Verify /__health
+        run: |
+          set -e
+          url='https://ftrans-iranyitoszam-terkep-v3-test.zoltan-toth.workers.dev/__health'
+          for i in 1 2 3 4 5; do
+            body=$(curl -fsS -A 'Mozilla/5.0' "$url" || true)
+            echo "$body" | head -c 400
+            echo
+            echo "$body" | grep -q '"ok": true' && echo HEALTH_OK && exit 0
+            sleep 5
+          done
+          echo 'HEALTH_FAILED'
+          exit 1
