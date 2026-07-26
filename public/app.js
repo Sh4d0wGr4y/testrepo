@@ -204,7 +204,7 @@ if (typeof L === 'undefined') {
 const state = {
   country: 'HU', layer: null, labels: L.layerGroup(), cities: L.layerGroup(), groups: new Map(), features: new Map(),
   selectedPrefixes: new Set(),
-  activeRange: null,
+  activeRanges: [],
   showCities: readShowCities(),
   showZoneColors: readShowColors(),
   showZoneLabels: readShowLabels(),
@@ -350,14 +350,38 @@ function shadeColor(hexOrRgb, amount) {
   const adj = (c) => Math.max(0, Math.min(255, Math.round(c + (amount * 255))));
   return `rgb(${adj(r)}, ${adj(g)}, ${adj(b)})`;
 }
+function hasActiveRanges() {
+  return state.activeRanges.length > 0;
+}
+function isActiveRange(range) {
+  return state.activeRanges.some((item) => item.min === range.min && item.max === range.max);
+}
 function inActiveRange(prefix) {
-  if (!state.activeRange) return true;
+  if (!hasActiveRanges()) return true;
   const n = prefixNumber(prefix);
-  return n >= state.activeRange.min && n <= state.activeRange.max;
+  return state.activeRanges.some((range) => n >= range.min && n <= range.max);
 }
 function rangeForPrefix(country, prefix) {
   const n = prefixNumber(prefix);
   return getRanges(country).find((range) => n >= range.min && n <= range.max) || null;
+}
+function setActiveRanges(ranges) {
+  state.activeRanges = Array.isArray(ranges) ? ranges.slice() : [];
+}
+function toggleActiveRange(range, additive) {
+  if (additive) {
+    if (isActiveRange(range)) {
+      state.activeRanges = state.activeRanges.filter((item) => item.min !== range.min || item.max !== range.max);
+    } else {
+      state.activeRanges = [...state.activeRanges, range];
+    }
+    return;
+  }
+  if (state.activeRanges.length === 1 && isActiveRange(range)) {
+    state.activeRanges = [];
+    return;
+  }
+  state.activeRanges = [range];
 }
 
 function polygonStyle(feature) {
@@ -480,8 +504,8 @@ function buildRangeButtons() {
   for (const range of getRanges(state.country)) {
     const button = document.createElement('button');
     button.type = 'button';
-    const active = state.activeRange?.min === range.min;
-    // Színes mód: csak a kijelölt zónacsoport kap színt.
+    const active = isActiveRange(range);
+    // Színes mód: csak a kijelölt zónacsoport(ok) kapnak színt.
     const showColor = state.showRangeColors && active;
     button.className = `range-button${active ? ' is-active' : ''}${showColor ? ' has-swatch' : ''}`;
     if (showColor) {
@@ -495,8 +519,9 @@ function buildRangeButtons() {
       button.textContent = range.label;
     }
     button.setAttribute('aria-pressed', String(active));
-    button.addEventListener('click', () => {
-      state.activeRange = range;
+    button.addEventListener('click', (event) => {
+      const additive = event.ctrlKey || event.metaKey;
+      toggleActiveRange(range, additive);
       state.selectedPrefixes.clear();
       clearPlaceMarker();
       hideResult();
@@ -504,7 +529,11 @@ function buildRangeButtons() {
       buildRangeButtons();
       buildQuickButtons();
       buildLabels();
-      fitActiveRange(true);
+      if (hasActiveRanges()) fitActiveRange(true);
+      else fitCountry(true);
+      if (additive && hasActiveRanges()) {
+        toast(`${state.activeRanges.length} zónacsoport kijelölve.`);
+      }
     });
     elements.rangeGrid.appendChild(button);
   }
@@ -513,7 +542,7 @@ function buildRangeButtons() {
 function buildQuickButtons() {
   elements.quickGrid.replaceChildren();
   const prefixes = [...state.groups.keys()].sort((a, b) => prefixNumber(a) - prefixNumber(b));
-  const filtered = state.activeRange ? prefixes.filter(inActiveRange) : prefixes;
+  const filtered = hasActiveRanges() ? prefixes.filter(inActiveRange) : prefixes;
   elements.quickEmpty.hidden = filtered.length > 0;
   for (const prefix of filtered) {
     const button = document.createElement('button');
@@ -786,11 +815,11 @@ function featureLabelPoint(feature) {
 function buildLabels() {
   state.labels.clearLayers();
   if (!state.showZoneLabels || !state.features.size) return;
-  const forceRange = Boolean(state.activeRange);
+  const forceRange = hasActiveRanges();
   const hasSelection = hasZoneSelection();
   const candidates = [];
   for (const [prefix, feature] of state.features.entries()) {
-    if (state.activeRange && !inActiveRange(prefix) && !isSelectedPrefix(prefix)) continue;
+    if (hasActiveRanges() && !inActiveRange(prefix) && !isSelectedPrefix(prefix)) continue;
     const point = featureLabelPoint(feature);
     if (!point) continue;
     candidates.push({ prefix, latLng: L.latLng(point[1], point[0]), selected: isSelectedPrefix(prefix) });
@@ -959,7 +988,7 @@ async function loadCountry(nextCountry, options = {}) {
     const nextGroups = new Map();
     const nextFeatures = new Map();
     state.country = nextCountry;
-    state.activeRange = null; // induláskor teljes ország, ne az első csoport
+    state.activeRanges = []; // induláskor teljes ország, ne az első csoport
     state.selectedPrefixes.clear();
     const newLayer = createGeoLayer(data, nextCountry, nextGroups, nextFeatures);
 
@@ -1127,11 +1156,11 @@ function softFitBounds(bounds, options = {}) {
   try {
     map.flyTo(target.center, target.zoom, {
       duration,
-      easeLinearity: options.easeLinearity ?? 0.48,
+      easeLinearity: options.easeLinearity ?? 0.55,
       noMoveStart: false
     });
   } catch {
-    map.fitBounds(bounds, { padding, maxZoom, animate: true, duration: Math.min(duration, 1.2) });
+    map.fitBounds(bounds, { padding, maxZoom, animate: true, duration: Math.min(duration, 0.55) });
   }
 
   const finish = () => {
@@ -1140,7 +1169,7 @@ function softFitBounds(bounds, options = {}) {
     setTimeout(buildLabels, 40);
   };
   map.once('moveend', finish);
-  setTimeout(finish, Math.ceil(duration * 1000) + 180);
+  setTimeout(finish, Math.ceil(duration * 1000) + 120);
   return true;
 }
 
@@ -1163,7 +1192,7 @@ function fitFeature(feature, options = {}) {
 }
 
 function fitActiveRange(smooth = true) {
-  if (!state.activeRange || !state.features.size) {
+  if (!hasActiveRanges() || !state.features.size) {
     fitCountry(smooth);
     return;
   }
@@ -1250,7 +1279,7 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
   clearPlaceMarker();
   const range = rangeForPrefix(state.country, key);
   if (range && options.activateRange) {
-    state.activeRange = range;
+    setActiveRanges([range]);
   }
   restyleMap();
   buildRangeButtons();
@@ -1628,7 +1657,7 @@ async function loadManifest() {
 }
 
 function clearAllFilters() {
-  state.activeRange = null;
+  state.activeRanges = [];
   state.selectedPrefixes.clear();
   clearPlaceMarker();
   elements.searchInput.value = '';
@@ -1662,7 +1691,7 @@ function bindEvents() {
     });
   }
   elements.showAllButton.addEventListener('click', () => {
-    state.activeRange = null;
+    state.activeRanges = [];
     state.selectedPrefixes.clear();
     clearPlaceMarker();
     hideResult();

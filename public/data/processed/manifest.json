@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.22",
+  "appVersion": "3.3.23",
   "packagedAt": "2026-07-26T14:20:00.000Z",
-  "notes": "V3.3.22: faster map flight animations (~0.3–0.8s)."
+  "notes": "V3.3.23: Ctrl multi-select for zone-group filters."
 }
