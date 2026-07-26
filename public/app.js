@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.17';
+const APP_VERSION = '3.3.18';
 
 const CONFIG = {
   HU: {
@@ -194,9 +194,7 @@ const elements = {
   detailRegion: $('detailRegion'), detailPostcodeLabel: $('detailPostcodeLabel'), detailPlaceLabel: $('detailPlaceLabel'),
   detailRegionLabel: $('detailRegionLabel'), resultMessage: $('resultMessage'), mapsLink: $('mapsLink'),
   fitCountryButton: $('fitCountryButton'), clearSelectionButton: $('clearSelectionButton'), fullscreenButton: $('fullscreenButton'),
-  themeButton: $('themeButton'), infoButton: $('infoButton'), infoDialog: $('infoDialog'), toast: $('toast'), dataStatus: $('dataStatus'),
-  mapLegend: $('mapLegend'), legendMin: $('legendMin'), legendMax: $('legendMax'),
-  legendTitle: $('legendTitle'), legendHint: $('legendHint'), legendCityRow: $('legendCityRow')
+  themeButton: $('themeButton'), infoButton: $('infoButton'), infoDialog: $('infoDialog'), toast: $('toast'), dataStatus: $('dataStatus')
 };
 
 if (typeof L === 'undefined') {
@@ -977,7 +975,6 @@ async function loadCountry(nextCountry, options = {}) {
       fitCountry(true);
     });
     renderCities();
-    updateLegend();
 
     const count = state.groups.size;
     elements.dataStatus.textContent = `${CONFIG[nextCountry].name}: ${count} zóna betöltve · v${APP_VERSION}`;
@@ -1007,48 +1004,6 @@ function updateCountryUI() {
   elements.countryName.textContent = cfg.name.toUpperCase();
   elements.mapTitle.textContent = state.country === 'HU' ? '1–9 postai zóna' : 'Kétjegyű postai zónák';
   elements.mapSubtitle.textContent = 'Kattints egy területre, vagy szűkíts zónacsoport szerint.';
-  updateLegend();
-}
-
-
-
-function updateLegend() {
-  const hu = state.country === 'HU';
-  if (elements.legendMin) elements.legendMin.textContent = hu ? '1' : '00';
-  if (elements.legendMax) elements.legendMax.textContent = hu ? '9' : '99';
-  if (elements.legendTitle) elements.legendTitle.textContent = hu ? 'Zónaszínek (1–9)' : 'Zónaszínek (00→99)';
-  if (elements.legendHint) {
-    elements.legendHint.textContent = hu
-      ? 'Minden szám saját, állandó színt kap.'
-      : 'A színek 00-tól a legnagyobb számig folyamatosan változnak.';
-  }
-  if (elements.legendCityRow) elements.legendCityRow.hidden = !state.showCities;
-  if (elements.mapLegend) {
-    elements.mapLegend.hidden = !state.showZoneColors && !state.showCities;
-    elements.mapLegend.dataset.scale = hu ? 'hu' : 'multi';
-  }
-  const chips = document.getElementById('legendChips');
-  const gradientRow = document.querySelector('.legend-scale-row');
-  if (chips) {
-    chips.replaceChildren();
-    if (hu && state.showZoneColors) {
-      chips.hidden = false;
-      for (let i = 1; i <= 9; i += 1) {
-        const item = document.createElement('span');
-        item.className = 'legend-chip';
-        item.title = `${i}-es zóna`;
-        item.innerHTML = `<i style="background:${HU_ZONE_COLORS[i]}"></i>${i}`;
-        chips.appendChild(item);
-      }
-    } else {
-      chips.hidden = true;
-    }
-  }
-  if (gradientRow) gradientRow.hidden = hu || !state.showZoneColors;
-  const gradient = document.querySelector('.legend-gradient');
-  if (gradient) gradient.hidden = hu || !state.showZoneColors;
-  if (elements.legendMin) elements.legendMin.hidden = hu || !state.showZoneColors;
-  if (elements.legendMax) elements.legendMax.hidden = hu || !state.showZoneColors;
 }
 
 function syncCountryFlags() {
@@ -1073,11 +1028,7 @@ function updateFullscreenFlags() {
 
 function renderCities() {
   state.cities.clearLayers();
-  if (!state.showCities) {
-    if (elements.legendCityRow) elements.legendCityRow.hidden = true;
-    return;
-  }
-  if (elements.legendCityRow) elements.legendCityRow.hidden = false;
+  if (!state.showCities) return;
   for (const [name, lat, lon] of CITY_DATA[state.country] || []) {
     const icon = L.divIcon({
       className: 'city-marker-icon',
@@ -1724,7 +1675,6 @@ function bindEvents() {
       state.showCities = Boolean(elements.citiesToggle.checked);
       saveShowCities();
       renderCities();
-      updateLegend();
     });
   }
   if (elements.colorsToggle) {
@@ -1733,7 +1683,6 @@ function bindEvents() {
       state.showZoneColors = Boolean(elements.colorsToggle.checked);
       saveShowColors();
       restyleMap();
-      updateLegend();
     });
   }
   if (elements.labelsToggle) {
@@ -1845,7 +1794,6 @@ async function init() {
   syncLabelColorToggle();
   syncCountryFlags();
   updateFullscreenFlags();
-  updateLegend();
   bindEvents();
   renderHistory();
   loadManifest();

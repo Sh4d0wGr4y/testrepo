@@ -539,32 +539,6 @@ html[data-theme='dark'] .result-card {
 .result-actions { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 13px; }
 .result-actions .secondary-button, .result-actions .primary-link { min-height: 42px; font-size: .78rem; }
 
-.map-legend {
-  position: absolute; z-index: 650; left: 14px; bottom: 14px;
-  display: grid; gap: 8px;
-  max-width: min(280px, calc(100% - 28px)); padding: 11px 13px; border-radius: 12px;
-  color: #48574d; background: rgba(255,255,255,.95); border: 1px solid rgba(205,220,210,.9);
-  box-shadow: 0 7px 18px rgba(20,52,30,.12); font-size: .72rem;
-}
-.legend-scale { display: grid; gap: 6px; }
-.legend-scale strong { font-size: 0.7rem; letter-spacing: 0.04em; text-transform: uppercase; color: #2f4236; }
-.legend-scale-row { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; }
-.legend-gradient {
-  width: 100%; height: 8px; border-radius: 99px;
-  background: linear-gradient(90deg, hsl(220 78% 47%), hsl(160 78% 42%), hsl(90 70% 42%), hsl(40 80% 48%), hsl(0 78% 50%));
-}
-.map-legend[data-scale="multi"] .legend-gradient {
-  background: linear-gradient(
-    90deg,
-    rgb(31, 95, 214),
-    rgb(12, 143, 134),
-    rgb(26, 168, 106),
-    rgb(212, 160, 23),
-    rgb(217, 119, 6),
-    rgb(194, 65, 12),
-    rgb(91, 79, 207)
-  );
-}
 .ftrans-zone-path.is-hidden {
   pointer-events: none !important;
 }
@@ -584,18 +558,6 @@ html[data-theme='dark'] .result-card {
   box-shadow: 0 0 0 2px rgba(196, 92, 38, 0.35), 0 4px 12px rgba(20, 40, 28, 0.28);
 }
 .place-map-pin span { display: none; }
-.legend-scale p { margin: 0; color: #66756c; }
-.legend-city-row { display: flex; align-items: center; gap: 8px; padding-top: 2px; border-top: 1px solid #e4ebe6; }
-.legend-city-dot {
-  width: 9px; height: 9px; border-radius: 50%;
-  background: #1d2a22; box-shadow: 0 0 0 3px rgba(255,255,255,.95), 0 0 0 4px rgba(29,42,34,.35);
-}
-html[data-theme='dark'] .map-legend {
-  color: #d7e2da; background: rgba(22, 32, 26, 0.94); border-color: rgba(70, 95, 78, 0.55);
-}
-html[data-theme='dark'] .legend-scale strong { color: #e7f0ea; }
-html[data-theme='dark'] .legend-scale p,
-html[data-theme='dark'] .legend-city-row { color: #a9b7ae; border-color: #2d3d33; }
 
 .city-marker-icon { background: transparent !important; border: 0 !important; }
 .city-map-label {
@@ -678,7 +640,6 @@ html[data-theme='dark'] .city-dot { background: #9fd4ab; box-shadow: 0 0 0 2px #
   .map-actions .secondary-button { flex: 1 1 auto; }
   .map-stage, #map { min-height: 470px; border-radius: 14px; }
   .result-card { right: 10px; top: 10px; width: calc(100% - 20px); max-height: calc(100% - 82px); overflow-y: auto; }
-  .map-legend { left: 9px; bottom: 9px; }
   .map-footer { display: grid; }
 }
 
@@ -734,30 +695,6 @@ html[data-theme='dark'] .map-loading {
   transition: opacity .18s ease !important;
 }
 
-.legend-chips {
-  display: grid;
-  grid-template-columns: repeat(9, minmax(0, 1fr));
-  gap: 4px;
-  margin: 2px 0 4px;
-}
-.legend-chip {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  font-size: 0.62rem;
-  font-weight: 800;
-  color: #314239;
-  line-height: 1;
-}
-.legend-chip i {
-  display: block;
-  width: 100%;
-  height: 10px;
-  border-radius: 3px;
-  box-shadow: inset 0 0 0 1px rgba(20, 40, 28, 0.18);
-}
-html[data-theme='dark'] .legend-chip { color: #d5e2d9; }
 
 /* Címke / marker: soha ne legyen fekete/fehér négyzet a háttérben */
 .leaflet-div-icon.zone-label,

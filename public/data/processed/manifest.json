@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.17",
+  "appVersion": "3.3.18",
   "packagedAt": "2026-07-26T14:20:00.000Z",
-  "notes": "V3.3.17: separate colored toggles for zone-group and quick-select buttons."
+  "notes": "V3.3.18: removed map color legend overlay."
 }
