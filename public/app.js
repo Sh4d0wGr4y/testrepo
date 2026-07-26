@@ -859,7 +859,7 @@ function renderCities() {
     const icon = L.divIcon({
       className: 'city-marker-icon',
       html: `<div class="city-map-label"><span class="city-dot" aria-hidden="true"></span><span class="city-name">${escapeHtml(name)}</span></div>`,
-      iconSize: [150, 22],
+      iconSize: null,
       iconAnchor: [7, 11]
     });
     L.marker([lat, lon], {
