@@ -402,7 +402,17 @@ html[data-theme='dark'] .map-loading {
   margin-top: 4px;
 }
 
-/* Nagy réteg opacity/transform animáció tiltása – fekete villanás ellen */
+/* Kattintáskor a böngésző fekete fókusz-négyszöget rajzol az SVG path köré — ezt tiltjuk. */
+.leaflet-container path.leaflet-interactive:focus,
+.leaflet-container path.ftrans-zone-path:focus,
+.leaflet-overlay-pane path:focus,
+.leaflet-overlay-pane svg:focus,
+.leaflet-pane > svg path.leaflet-interactive:focus {
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-style: none !important;
+  outline-color: transparent !important;
+}
 .leaflet-overlay-pane svg,
 .leaflet-overlay-pane path.ftrans-zone-path,
 .leaflet-zoom-anim .leaflet-zoom-animated {
