@@ -12,7 +12,10 @@ from shapely.validation import make_valid
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "public" / "data" / "processed"
-FILES = ("hu_prefix1.geojson", "de_prefix2.geojson", "it_prefix2.geojson")
+# IT land gaps are filled by scripts/fill-it-land-gaps.py — skip IT by default
+# so aggressive scrap/overlap cleaning does not reopen coastal holes.
+FILES = ("hu_prefix1.geojson", "de_prefix2.geojson")
+ALL_FILES = ("hu_prefix1.geojson", "de_prefix2.geojson", "it_prefix2.geojson")
 
 
 def as_valid(geom):
@@ -240,7 +243,17 @@ def process_file(name: str) -> None:
 
 
 def main() -> None:
-    for name in FILES:
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--include-it",
+        action="store_true",
+        help="Also clean it_prefix2.geojson (may reopen land gaps; re-run fill-it-land-gaps.py after).",
+    )
+    args = parser.parse_args()
+    files = ALL_FILES if args.include_it else FILES
+    for name in files:
         process_file(name)
 
 

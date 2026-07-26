@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.25",
-  "packagedAt": "2026-07-26T14:20:00.000Z",
-  "notes": "V3.3.25: always fit all multi-selected areas with ~2s flight."
+  "appVersion": "3.3.26",
+  "packagedAt": "2026-07-26T15:27:34.000Z",
+  "notes": "V3.3.26: fill Italian land gaps (Calabria tip, Sicily, inland holes) against Italy outline."
 }
