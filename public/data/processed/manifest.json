@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.7",
+  "appVersion": "3.3.8",
   "packagedAt": "2026-07-26T09:30:00.000Z",
-  "notes": "V3.3.7: selection dims others; Maps uses pure coords pin; default no filters/cities."
+  "notes": "V3.3.8: zone Google Maps opens area viewport; place search keeps pin."
 }
