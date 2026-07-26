@@ -1098,7 +1098,8 @@ function flightDurationSeconds(fromCenter, toCenter, fromZoom, toZoom) {
   const zoomDelta = Math.abs(fromZoom - toZoom);
   const distanceFactor = clampNumber(distanceM / 780000, 0, 1);
   const zoomFactor = clampNumber(zoomDelta / 4.2, 0, 1);
-  return clampNumber(0.95 + distanceFactor * 0.7 + zoomFactor * 0.45, 0.9, 1.9);
+  // Rövid ugrás ~0.35s, országváltás / nagy ugrás ~0.75s
+  return clampNumber(0.35 + distanceFactor * 0.28 + zoomFactor * 0.18, 0.32, 0.78);
 }
 
 function softFitBounds(bounds, options = {}) {
@@ -1371,7 +1372,7 @@ async function executeSearch(rawValue, options = {}) {
     } else {
       const duration = flightDurationSeconds(map.getCenter(), target, map.getZoom(), zoom);
       try {
-        map.flyTo(target, zoom, { duration, easeLinearity: 0.48 });
+        map.flyTo(target, zoom, { duration, easeLinearity: 0.55 });
       } catch {
         map.setView(target, zoom, { animate: true });
       }

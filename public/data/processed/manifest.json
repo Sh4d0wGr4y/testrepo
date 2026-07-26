@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.21",
+  "appVersion": "3.3.22",
   "packagedAt": "2026-07-26T14:20:00.000Z",
-  "notes": "V3.3.21: fullscreen flags as SVG images, moved bottom-left away from Esc banner."
+  "notes": "V3.3.22: faster map flight animations (~0.3–0.8s)."
 }

@@ -1,6 +1,6 @@
 {
   "name": "ftrans-iranyitoszam-terkep",
-  "version": "3.3.21",
+  "version": "3.3.22",
   "private": true,
   "description": "F-TRANS irányítószám-kereső V3.3 – önálló GeoJSON + Leaflet, Cloudflare Workers.",
   "scripts": {
