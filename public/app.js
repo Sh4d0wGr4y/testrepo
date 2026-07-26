@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.28';
+const APP_VERSION = '3.3.29';
 
 const CONFIG = {
   HU: {
@@ -407,7 +407,7 @@ function polygonStyle(feature) {
   return {
     renderer: zoneRenderer,
     color: selected ? '#0f7a38' : (state.showZoneColors ? shadeColor(fill, -0.28) : 'rgba(40, 55, 48, 0.5)'),
-    weight: selected ? 3.2 : (hasSelection ? 0.75 : 1.15),
+    weight: selected ? 3.0 : (hasSelection ? 0.55 : 0.7),
     opacity: selected ? 1 : (hasSelection ? 0.4 : 0.82),
     fillColor: fill,
     fillOpacity: baseFill,

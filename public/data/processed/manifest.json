@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.28",
-  "packagedAt": "2026-07-26T19:57:41.000Z",
-  "notes": "V3.3.28: clip IT zones to real coastline (Natural Earth) — no sea blobs."
+  "appVersion": "3.3.29",
+  "packagedAt": "2026-07-26T20:05:29.000Z",
+  "notes": "V3.3.29: tighter coastline clip — zone fill stays on land, not sea."
 }
