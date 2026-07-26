@@ -44,7 +44,7 @@ for (const rel of REQUIRED_FILES) {
 
 const worker = fs.readFileSync(path.join(root, 'src/index.js'), 'utf8');
 assert.match(worker, /__health/);
-assert.match(worker, /APP_VERSION = '3\.3\.10'/);
+assert.match(worker, /APP_VERSION = '3\.3\.11'/);
 ok('worker /__health és verzió');
 
 const app = fs.readFileSync(path.join(publicDir, 'app.js'), 'utf8');
@@ -57,7 +57,10 @@ for (const needle of [
   'preferCanvas: false',
   'fadeAnimation: false',
   'retryButton',
-  'api.zippopotam.us'
+  'api.zippopotam.us',
+  'postcodeRangeForPrefix',
+  'citiesInZone',
+  'detailPostcodeLabel'
 ]) {
   assert.ok(app.includes(needle), `app.js hiányzó rész: ${needle}`);
 }
@@ -80,7 +83,7 @@ ok('ország zászlók, városok pipa, szűrő törlés');
 
 
 const manifest = JSON.parse(fs.readFileSync(path.join(publicDir, 'data/processed/manifest.json'), 'utf8'));
-assert.equal(manifest.appVersion, '3.3.10');
+assert.equal(manifest.appVersion, '3.3.11');
 ok('manifest appVersion');
 
 for (const [name, spec] of Object.entries(EXPECTED)) {

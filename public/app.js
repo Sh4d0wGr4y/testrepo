@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.10';
+const APP_VERSION = '3.3.11';
 
 const CONFIG = {
   HU: {
@@ -118,7 +118,8 @@ const elements = {
   retryButton: $('retryButton'),
   resultCard: $('resultCard'), resultCloseButton: $('resultCloseButton'), resultBadge: $('resultBadge'), resultCode: $('resultCode'),
   resultPlace: $('resultPlace'), resultRegion: $('resultRegion'), detailPostcode: $('detailPostcode'), detailPlace: $('detailPlace'),
-  detailRegion: $('detailRegion'), resultMessage: $('resultMessage'), mapsLink: $('mapsLink'),
+  detailRegion: $('detailRegion'), detailPostcodeLabel: $('detailPostcodeLabel'), detailPlaceLabel: $('detailPlaceLabel'),
+  detailRegionLabel: $('detailRegionLabel'), resultMessage: $('resultMessage'), mapsLink: $('mapsLink'),
   fitCountryButton: $('fitCountryButton'), clearSelectionButton: $('clearSelectionButton'), fullscreenButton: $('fullscreenButton'),
   themeButton: $('themeButton'), infoButton: $('infoButton'), infoDialog: $('infoDialog'), toast: $('toast'), dataStatus: $('dataStatus'),
   systemStatus: $('systemStatus'), mapLegend: $('mapLegend'), legendMin: $('legendMin'), legendMax: $('legendMax'),
@@ -992,7 +993,7 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
     place: '',
     region: '',
     verified: false,
-    message: 'A zóna ki van jelölve. Újabb zónára kattintva válthatsz; ugyanarra kattintva törlődik. A Google Maps csak a területre zoomol (kontúrt nem rajzol).'
+    message: 'A zóna ki van jelölve. Újabb zónára kattintva válthatsz; ugyanarra kattintva törlődik.'
   });
 }
 
@@ -1153,6 +1154,28 @@ function googleMapsUrl(result) {
   return googleMapsAreaUrl(cfg.center[0], cfg.center[1], cfg.zoom);
 }
 
+function postcodeRangeForPrefix(prefix) {
+  const cfg = CONFIG[state.country];
+  const digits = cfg.digits;
+  const prefixDigits = cfg.prefixDigits;
+  const p = String(prefix).padStart(prefixDigits, '0');
+  const fill = digits - prefixDigits;
+  if (fill < 0) return p;
+  const from = `${p}${'0'.repeat(fill)}`;
+  const to = `${p}${'9'.repeat(fill)}`;
+  return from === to ? from : `${from}–${to}`;
+}
+
+function citiesInZone(prefix) {
+  const feature = state.features.get(String(prefix));
+  if (!feature?.geometry) return [];
+  const names = [];
+  for (const [name, lat, lon] of CITY_DATA[state.country] || []) {
+    if (pointInGeometry(lon, lat, feature.geometry)) names.push(name);
+  }
+  return names;
+}
+
 function showResult(result) {
   const cfg = CONFIG[state.country];
   if ((!Number.isFinite(result.latitude) || !Number.isFinite(result.longitude)) && result.prefix) {
@@ -1163,20 +1186,42 @@ function showResult(result) {
   }
   state.currentResult = result;
   elements.resultCard.hidden = false;
-  elements.resultBadge.textContent = result.verified ? 'Ellenőrzött találat' : 'Kiválasztott zóna';
-  elements.resultCode.textContent = result.postcode || result.prefix;
-  elements.resultPlace.textContent = result.place || `${result.prefix}-es postai zóna`;
-  elements.resultRegion.textContent = result.region || cfg.name;
-  elements.detailPostcode.textContent = result.postcode || '—';
-  elements.detailPlace.textContent = result.place || '—';
-  elements.detailRegion.textContent = result.region || '—';
   const place = isPlaceResult(result);
+  const prefix = result.prefix ? String(result.prefix) : '';
+  const zoneCities = (!place && prefix) ? citiesInZone(prefix) : [];
+  const zoneRange = (!place && prefix) ? postcodeRangeForPrefix(prefix) : '';
+
+  elements.resultBadge.textContent = place ? 'Ellenőrzött találat' : 'Kiválasztott zóna';
+  elements.resultCode.textContent = result.postcode || prefix;
+  elements.resultPlace.textContent = place
+    ? (result.place || `${prefix}-es postai zóna`)
+    : `${prefix}-es postai zóna`;
+  elements.resultRegion.textContent = result.region || cfg.name;
+
+  if (place) {
+    if (elements.detailPostcodeLabel) elements.detailPostcodeLabel.textContent = 'Teljes kód';
+    if (elements.detailPlaceLabel) elements.detailPlaceLabel.textContent = 'Település';
+    if (elements.detailRegionLabel) elements.detailRegionLabel.textContent = 'Régió';
+    elements.detailPostcode.textContent = result.postcode || '—';
+    elements.detailPlace.textContent = result.place || '—';
+    elements.detailRegion.textContent = result.region || cfg.name;
+  } else {
+    if (elements.detailPostcodeLabel) elements.detailPostcodeLabel.textContent = 'Tartomány';
+    if (elements.detailPlaceLabel) elements.detailPlaceLabel.textContent = 'Nagyvárosok';
+    if (elements.detailRegionLabel) elements.detailRegionLabel.textContent = 'Ország';
+    elements.detailPostcode.textContent = zoneRange || prefix || '—';
+    elements.detailPlace.textContent = zoneCities.length
+      ? zoneCities.join(', ')
+      : 'Több település a zónában';
+    elements.detailRegion.textContent = cfg.name;
+  }
+
   if (!result.message) {
     elements.resultMessage.textContent = place
       ? 'A teljes irányítószám települési adatait online ellenőriztük.'
-      : 'A zóna ki van jelölve. Újabb zónára kattintva válthatsz; ugyanarra kattintva törlődik. A Google Maps csak a területre zoomol (kontúrt nem rajzol).';
-  } else if (!place && (result.message.includes('zöld keret') || result.message.includes('kontúrt'))) {
-    elements.resultMessage.textContent = 'A zóna ki van jelölve. Újabb zónára kattintva válthatsz; ugyanarra kattintva törlődik. A Google Maps csak a területre zoomol (kontúrt nem rajzol).';
+      : 'A zóna ki van jelölve. Újabb zónára kattintva válthatsz; ugyanarra kattintva törlődik.';
+  } else if (!place && (result.message.includes('zöld keret') || result.message.includes('kontúrt') || result.message.includes('Google Maps'))) {
+    elements.resultMessage.textContent = 'A zóna ki van jelölve. Újabb zónára kattintva válthatsz; ugyanarra kattintva törlődik.';
   } else {
     elements.resultMessage.textContent = result.message;
   }

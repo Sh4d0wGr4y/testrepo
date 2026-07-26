@@ -252,7 +252,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .result-card h2 { margin: 8px 30px 0 0; font-size: 1.35rem; }
 .result-card > p { margin: 4px 0 0; color: #607066; }
 .result-details { margin: 17px 0 0; border-top: 1px solid #e1e9e3; }
-.result-details div { display: grid; grid-template-columns: 95px minmax(0,1fr); gap: 10px; padding: 10px 0; border-bottom: 1px solid #e8eee9; }
+.result-details div { display: grid; grid-template-columns: 108px minmax(0,1fr); gap: 10px; padding: 10px 0; border-bottom: 1px solid #e8eee9; }
 .result-details dt { color: #69776e; font-size: .78rem; }
 .result-details dd { margin: 0; text-align: right; font-size: .8rem; font-weight: 800; overflow-wrap: anywhere; }
 .result-message { min-height: 34px; font-size: .75rem; }

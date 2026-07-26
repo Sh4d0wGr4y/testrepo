@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.10",
+  "appVersion": "3.3.11",
   "packagedAt": "2026-07-26T09:30:00.000Z",
-  "notes": "V3.3.10: remove unused copy button from result card."
+  "notes": "V3.3.11: zone result card filled with range, cities, country."
 }
