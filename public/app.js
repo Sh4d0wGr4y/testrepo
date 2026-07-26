@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.2';
+const APP_VERSION = '3.3.3';
 
 const CONFIG = {
   HU: {
@@ -21,6 +21,18 @@ const CONFIG = {
 };
 
 const COLORS = ['#59b56d','#35a792','#32a8b3','#4f94cf','#687fd1','#8b72c3','#bf70aa','#d27678','#d98d55','#d3ac51'];
+// HU 1–9: jól elkülönülő, sorrendben olvasható színek (nem „random szivárvány”)
+const HU_ZONE_COLORS = {
+  1: '#1d6fd8', // kék – Budapest
+  2: '#0f9f8a', // smaragdzöld
+  3: '#2fbf71', // élénkzöld
+  4: '#8bc34a', // lime
+  5: '#f0c419', // sárga
+  6: '#f08a24', // narancs
+  7: '#e4572e', // vörösnarancs
+  8: '#c73e6c', // magenta
+  9: '#7b3fa0'  // lila
+};
 const HISTORY_KEY = 'ftrans-postcode-history-v3';
 const THEME_KEY = 'ftrans-postcode-theme-v3';
 const MAX_HISTORY = 6;
@@ -188,15 +200,12 @@ function colorFor(prefix, country = state.country) {
   const n = Math.max(0, prefixNumber(prefix));
   const digits = CONFIG[country]?.prefixDigits || 2;
   if (digits === 1) {
-    // HU 1–9: egyenletes színskála (kék → piros)
-    const t = Math.min(1, Math.max(0, (n - 1) / 8));
-    const hue = 220 + (0 - 220) * t;
-    return `hsl(${hue} 78% 47%)`;
+    return HU_ZONE_COLORS[n] || HU_ZONE_COLORS[1];
   }
-  // DE/IT: szomszédos zónák legyenek jól megkülönböztethetők
+  // DE/IT: szomszédos számok távoli hue-t kapnak (golden angle)
   const hue = (n * 137.508) % 360;
-  const sat = 70 + (n % 3) * 5;
-  const light = 42 + (n % 4) * 3;
+  const sat = 72 + (n % 3) * 6;
+  const light = 44 + (n % 5) * 3;
   return `hsl(${hue.toFixed(1)} ${sat}% ${light}%)`;
 }
 function inActiveRange(prefix) {
@@ -218,24 +227,26 @@ function polygonStyle(feature) {
   if (!visible) {
     return {
       renderer: svgRenderer,
-      color: '#000000',
+      color: fill,
       weight: 0,
       opacity: 0,
       fillColor: fill,
       fillOpacity: 0,
-      className: 'ftrans-zone-path is-hidden'
+      className: 'ftrans-zone-path is-hidden',
+      interactive: false
     };
   }
   return {
     renderer: svgRenderer,
-    color: selected ? '#ffffff' : '#2f4738',
-    weight: selected ? 3.4 : 1.15,
-    opacity: 1,
+    color: selected ? '#0d5c24' : 'rgba(20, 40, 28, 0.55)',
+    weight: selected ? 3.2 : 1.05,
+    opacity: selected ? 1 : 0.85,
     fillColor: fill,
-    fillOpacity: selected ? 0.86 : 0.64,
+    fillOpacity: selected ? 0.88 : 0.58,
     lineCap: 'round',
     lineJoin: 'round',
-    className: selected ? 'ftrans-zone-path is-selected' : 'ftrans-zone-path'
+    className: selected ? 'ftrans-zone-path is-selected' : 'ftrans-zone-path',
+    interactive: true
   };
 }
 
@@ -649,10 +660,11 @@ function createGeoLayer(data, nextCountry, nextGroups, nextFeatures) {
       polygon.on('mouseover', (event) => {
         if (prefix !== state.selectedPrefix) {
           event.target.setStyle({
-            weight: 2,
-            color: '#ffffff',
-            fillOpacity: Math.max(polygonStyle(feature).fillOpacity, 0.42)
+            weight: 2.2,
+            color: '#0d5c24',
+            fillOpacity: Math.min(0.78, Math.max(polygonStyle(feature).fillOpacity, 0.5))
           });
+          if (event.target.bringToFront) event.target.bringToFront();
         }
       });
       polygon.on('mouseout', (event) => event.target.setStyle(polygonStyle(feature)));
@@ -771,17 +783,37 @@ function updateLegend() {
   const hu = state.country === 'HU';
   if (elements.legendMin) elements.legendMin.textContent = hu ? '1' : '00';
   if (elements.legendMax) elements.legendMax.textContent = hu ? '9' : '99';
-  if (elements.legendTitle) elements.legendTitle.textContent = hu ? 'Magyar színskála' : 'Zóna színskála';
+  if (elements.legendTitle) elements.legendTitle.textContent = hu ? 'Zónaszínek (1–9)' : 'Zónaszínek';
   if (elements.legendHint) {
     elements.legendHint.textContent = hu
-      ? 'Az 1–9 zónák saját színt kapnak.'
-      : 'Minden zóna saját színt kap a könnyebb megkülönböztetéshez.';
+      ? 'Minden szám saját, állandó színt kap.'
+      : 'A szomszédos zónák szándékosan más színt kapnak.';
   }
   if (elements.legendCityRow) elements.legendCityRow.hidden = !state.showCities;
   if (elements.mapLegend) {
     elements.mapLegend.hidden = false;
     elements.mapLegend.dataset.scale = hu ? 'hu' : 'multi';
   }
+  const chips = document.getElementById('legendChips');
+  if (chips) {
+    chips.replaceChildren();
+    if (hu) {
+      chips.hidden = false;
+      for (let i = 1; i <= 9; i += 1) {
+        const item = document.createElement('span');
+        item.className = 'legend-chip';
+        item.title = `${i}-es zóna`;
+        item.innerHTML = `<i style="background:${HU_ZONE_COLORS[i]}"></i>${i}`;
+        chips.appendChild(item);
+      }
+    } else {
+      chips.hidden = true;
+    }
+  }
+  const gradient = document.querySelector('.legend-gradient');
+  if (gradient) gradient.hidden = hu;
+  if (elements.legendMin) elements.legendMin.hidden = hu;
+  if (elements.legendMax) elements.legendMax.hidden = hu;
 }
 
 function syncCountryFlags() {
@@ -918,7 +950,7 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
     place: '',
     region: '',
     verified: false,
-    message: 'A zóna ki van jelölve. A fehér keret a kiválasztott területet mutatja.'
+    message: 'A zóna ki van jelölve. A sötétzöld keret a kiválasztott területet mutatja.'
   });
 }
 

@@ -48,28 +48,34 @@ def clean_feature_parts(geom, min_keep_ratio: float = 0.04, max_gap_deg: float =
     parts = sorted(parts, key=lambda p: p.area, reverse=True)
     main = parts[0]
     kept = [main]
-    main_pt = main.representative_point()
     for part in parts[1:]:
+        try:
+            gap = main.distance(part)
+        except Exception:
+            gap = 999.0
+        # Nagy, de a fő tömegtől távoli darab = tipikus névütközéses hibás hozzárendelés (pl. Kömlő→Komló).
+        if gap > 1.2:
+            continue
         if part.area >= main.area * min_keep_ratio:
             kept.append(part)
             continue
-        # Keep small coastal/island scraps only if close to the main body.
-        if main.distance(part) <= max_gap_deg:
+        if gap <= max_gap_deg:
             kept.append(part)
             continue
-        # Drop distant tiny scrap (often nested inside another zone).
     if len(kept) == 1:
         return kept[0]
     return unary_union(kept)
 
 
 def drop_parts_inside_other_mains(features: list[dict]) -> list[dict]:
-    """Remove polygon scraps whose point falls inside another zone's main polygon."""
+    """Remove or reassign polygon scraps that belong inside another zone's main body."""
     mains: dict[str, object] = {}
     cleaned_parts: dict[str, list] = {}
+    props_by: dict[str, dict] = {}
 
     for feature in features:
         prefix = str(feature["properties"]["prefix"])
+        props_by[prefix] = dict(feature["properties"])
         geom = clean_feature_parts(shape(feature["geometry"]))
         parts = polygon_parts(geom) if geom is not None else []
         if not parts:
@@ -78,42 +84,71 @@ def drop_parts_inside_other_mains(features: list[dict]) -> list[dict]:
         mains[prefix] = parts[0]
         cleaned_parts[prefix] = parts
 
-    # Build spatial index of mains for containment checks
     other_mains = list(mains.items())
-    result = []
-    for feature in features:
-        prefix = str(feature["properties"]["prefix"])
-        parts = cleaned_parts.get(prefix) or []
-        if not parts:
-            continue
-        kept = []
-        for part in parts:
+    # Collect reassignments: scrap → host prefix
+    extras: dict[str, list] = {p: [] for p in cleaned_parts}
+    kept_parts: dict[str, list] = {p: [] for p in cleaned_parts}
+
+    for prefix, parts in cleaned_parts.items():
+        own_main = parts[0]
+        for idx, part in enumerate(parts):
+            if idx == 0:
+                kept_parts[prefix].append(part)
+                continue
+
             pt = part.representative_point()
-            inside_other = False
+            host = None
+            host_overlap = 0.0
             for other_prefix, other_main in other_mains:
                 if other_prefix == prefix:
                     continue
                 try:
-                    if other_main.contains(pt) or other_main.covers(pt):
-                        # Only drop if this part is clearly smaller than the host main.
-                        if part.area < other_main.area * 0.35:
-                            inside_other = True
-                            break
+                    if other_main.contains(pt) or other_main.covers(pt) or other_main.intersects(part):
+                        try:
+                            overlap = other_main.intersection(part).area
+                        except Exception:
+                            overlap = part.area if other_main.contains(pt) else 0.0
+                        # Prefer host that covers most of the scrap, and only if scrap is smaller.
+                        if part.area < other_main.area * 0.35 and overlap >= host_overlap:
+                            if overlap > part.area * 0.2 or other_main.contains(pt) or other_main.covers(pt):
+                                host = other_prefix
+                                host_overlap = overlap
                 except Exception:
                     continue
-            if not inside_other:
-                kept.append(part)
-        if not kept:
-            # Never delete a whole zone — keep original main.
-            kept = [parts[0]]
-        geom = kept[0] if len(kept) == 1 else unary_union(kept)
+
+            far_from_own = False
+            try:
+                far_from_own = own_main.distance(part) > 1.2
+            except Exception:
+                far_from_own = False
+
+            if host and (host_overlap > 0 or far_from_own):
+                # Reassign mis-attached scrap (e.g. Kömlő stuck on Komló/zone 7) to the host zone.
+                extras.setdefault(host, []).append(part)
+                continue
+
+            if far_from_own and part.area < own_main.area * 0.08:
+                # Distant tiny scrap with no clear host — drop.
+                continue
+
+            kept_parts[prefix].append(part)
+
+    result = []
+    all_prefixes = sorted(set(kept_parts) | set(extras), key=lambda p: (len(p), p))
+    for prefix in all_prefixes:
+        pieces = list(kept_parts.get(prefix) or [])
+        pieces.extend(extras.get(prefix) or [])
+        if not pieces:
+            continue
+        geom = pieces[0] if len(pieces) == 1 else unary_union(pieces)
         geom = as_valid(geom)
         if geom is None:
             continue
+        props = props_by.get(prefix) or {"prefix": prefix}
         result.append(
             {
                 "type": "Feature",
-                "properties": dict(feature["properties"]),
+                "properties": dict(props),
                 "geometry": mapping(geom),
             }
         )
