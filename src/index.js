@@ -196,6 +196,16 @@ export default {
     const assetResponse = await env.ASSETS.fetch(request);
     const headers = new Headers(assetResponse.headers);
     headers.set('x-ftrans-version', APP_VERSION);
+    // A UI fájlok gyorsan frissüljenek deploy után (ne ragadjon be a régi Maps/kijelölés logika).
+    if (
+      pathname === '/' ||
+      pathname === '/index.html' ||
+      pathname === '/app.js' ||
+      pathname === '/styles.css' ||
+      pathname.endsWith('.html')
+    ) {
+      headers.set('cache-control', 'no-cache');
+    }
     return new Response(assetResponse.body, {
       status: assetResponse.status,
       headers
