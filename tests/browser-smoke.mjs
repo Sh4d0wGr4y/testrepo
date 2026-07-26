@@ -116,10 +116,17 @@ try {
   const placePin = await page.locator('.place-map-pin').count();
   if (placePin < 1) throw new Error('DE keresés után nincs helyjelölő a térképen');
   const mapsHref = await page.locator('#mapsLink').getAttribute('href');
-  if (!mapsHref || !/maps\?q=-?\d/.test(mapsHref) || /postai zóna/.test(decodeURIComponent(mapsHref))) {
-    throw new Error(`DE Maps link hibás: ${mapsHref}`);
+  // Keresés = konkrét hely → tű (q=lat,lng). Zónakattintás = terület (@lat,lng,z).
+  if (!mapsHref || !/maps\?q=52\./.test(mapsHref)) {
+    throw new Error(`DE keresés Maps link hibás (tű kell): ${mapsHref}`);
   }
-  console.log('OK: keresés kijelöl, szűrő tiszta, Maps pin link');
+  await page.click('.quick-button:text-is("10")');
+  await wait(500);
+  const zoneHref = await page.locator('#mapsLink').getAttribute('href');
+  if (!zoneHref || !/google\.com\/maps\/@52\./.test(zoneHref)) {
+    throw new Error(`DE zóna Maps link hibás (területnézet kell): ${zoneHref}`);
+  }
+  console.log('OK: keresés=tű, zóna=területnézet, szűrő tiszta');
 
   // HU keresés
   await page.click('.country-flag-button[data-country="HU"]');

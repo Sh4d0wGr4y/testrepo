@@ -991,7 +991,7 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
     place: '',
     region: '',
     verified: false,
-    message: 'A zóna ki van jelölve. A zöld keret a kiválasztott területet mutatja.'
+    message: 'A zóna ki van jelölve. A Google Maps a zóna területére zoomol (kontúrt a Google nem rajzol).'
   });
 }
 
@@ -1072,64 +1072,76 @@ async function executeSearch(rawValue, options = {}) {
   if (!options.fromHistory) addHistory({ country: state.country, postcode: value, place: result.place, prefix });
 }
 
-function zoneMapCenter(prefix) {
+function zoneFeature(prefix) {
   const key = String(prefix ?? '').padStart(CONFIG[state.country].prefixDigits, '0');
-  const feature = state.features.get(key) || state.features.get(String(prefix));
+  return state.features.get(key) || state.features.get(String(prefix)) || null;
+}
+
+function zoneMapCenter(prefix) {
+  const feature = zoneFeature(prefix);
   if (!feature) return null;
   // Ugyanarra a legnagyobb darabra támaszkodunk, mint a térképes zoom.
   const bounds = boundsForFeature(feature) || fullFeatureBounds(feature);
   if (bounds?.isValid()) {
     const c = bounds.getCenter();
     if (pointInGeometry(c.lng, c.lat, feature.geometry)) {
-      return { latitude: c.lat, longitude: c.lng };
+      return { latitude: c.lat, longitude: c.lng, bounds };
     }
   }
   const point = featureLabelPoint(feature);
   if (Array.isArray(point) && point.length === 2 && Number.isFinite(point[0]) && Number.isFinite(point[1])) {
-    return { latitude: point[1], longitude: point[0] };
+    return { latitude: point[1], longitude: point[0], bounds };
   }
   if (bounds?.isValid()) {
     const c = bounds.getCenter();
-    return { latitude: c.lat, longitude: c.lng };
+    return { latitude: c.lat, longitude: c.lng, bounds };
   }
   return null;
 }
 
-function mapsZoomForBounds(result) {
-  if (result.postcode && result.verified) return state.country === 'HU' ? 13 : 14;
-  const key = result.prefix ? String(result.prefix).padStart(CONFIG[state.country].prefixDigits, '0') : null;
-  const feature = key ? state.features.get(key) : null;
-  const bounds = feature ? (boundsForFeature(feature) || fullFeatureBounds(feature)) : null;
-  if (bounds?.isValid()) {
-    const span = Math.max(
-      Math.abs(bounds.getNorth() - bounds.getSouth()),
-      Math.abs(bounds.getEast() - bounds.getWest())
-    );
-    if (span > 2.5) return 8;
-    if (span > 1.4) return 9;
-    if (span > 0.8) return 10;
-    if (span > 0.4) return 11;
-    return 12;
-  }
-  return 10;
+function zoomForLatLngBounds(bounds, paddingFactor = 1) {
+  if (!bounds?.isValid()) return 10;
+  const span = Math.max(
+    Math.abs(bounds.getNorth() - bounds.getSouth()),
+    Math.abs(bounds.getEast() - bounds.getWest())
+  ) * paddingFactor;
+  if (span > 3.5) return 7;
+  if (span > 2.2) return 8;
+  if (span > 1.3) return 9;
+  if (span > 0.75) return 10;
+  if (span > 0.4) return 11;
+  if (span > 0.2) return 12;
+  return 13;
+}
+
+function isPlaceResult(result) {
+  return Boolean(result?.verified && result?.postcode && Number.isFinite(Number(result.latitude)) && Number.isFinite(Number(result.longitude)));
 }
 
 function googleMapsUrl(result) {
-  let lat = Number(result.latitude);
-  let lon = Number(result.longitude);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-    const center = result.prefix ? zoneMapCenter(String(result.prefix)) : null;
-    if (center) {
-      lat = center.latitude;
-      lon = center.longitude;
-    }
+  // Konkrét település / irányítószám → tű a címen.
+  if (isPlaceResult(result)) {
+    const lat = Number(result.latitude);
+    const lon = Number(result.longitude);
+    return `https://maps.google.com/maps?q=${lat.toFixed(5)},${lon.toFixed(5)}&ll=${lat.toFixed(5)},${lon.toFixed(5)}&z=14`;
   }
-  if (Number.isFinite(lat) && Number.isFinite(lon)) {
-    const zoom = mapsZoomForBounds(result);
-    // Csak koordináta — szöveges toldalék nélkül (az félrevinne a Google keresőt).
-    // q= + ll= + z= → piros tű a pontos ponton.
-    return `https://maps.google.com/maps?q=${lat.toFixed(5)},${lon.toFixed(5)}&ll=${lat.toFixed(5)},${lon.toFixed(5)}&z=${zoom}`;
+
+  // Zóna / szűrés → a zóna TELJES területére zoomol (nem egy félrevezető középső tű).
+  // A Google Maps webes linkkel nem tudja kirajzolni a mi poligonunkat, de a nézet egyezhet.
+  const feature = result.prefix ? zoneFeature(result.prefix) : null;
+  const bounds = feature ? (fullFeatureBounds(feature) || boundsForFeature(feature)) : null;
+  if (bounds?.isValid()) {
+    const c = bounds.getCenter();
+    const zoom = zoomForLatLngBounds(bounds);
+    return `https://www.google.com/maps/@${c.lat.toFixed(5)},${c.lng.toFixed(5)},${zoom}z`;
   }
+
+  const center = result.prefix ? zoneMapCenter(String(result.prefix)) : null;
+  if (center) {
+    const zoom = center.bounds ? zoomForLatLngBounds(center.bounds) : 10;
+    return `https://www.google.com/maps/@${center.latitude.toFixed(5)},${center.longitude.toFixed(5)},${zoom}z`;
+  }
+
   const cfg = CONFIG[state.country];
   const query = [result.postcode, result.place, cfg.name].filter(Boolean).join(' ');
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query || cfg.name)}`;
@@ -1137,7 +1149,6 @@ function googleMapsUrl(result) {
 
 function showResult(result) {
   const cfg = CONFIG[state.country];
-  // Zónakattintásnál töltsük fel a középpontot a Maps linkhez.
   if ((!Number.isFinite(result.latitude) || !Number.isFinite(result.longitude)) && result.prefix) {
     const center = zoneMapCenter(String(result.prefix));
     if (center) {
@@ -1153,15 +1164,29 @@ function showResult(result) {
   elements.detailPostcode.textContent = result.postcode || '—';
   elements.detailPlace.textContent = result.place || '—';
   elements.detailRegion.textContent = result.region || '—';
-  elements.resultMessage.textContent = result.message || '';
+  const place = isPlaceResult(result);
+  if (!result.message) {
+    elements.resultMessage.textContent = place
+      ? 'A teljes irányítószám települési adatait online ellenőriztük.'
+      : 'A zóna ki van jelölve. A Google Maps a zóna területére zoomol (kontúrt a Google nem rajzol).';
+  } else if (!place && result.message.includes('zöld keret')) {
+    elements.resultMessage.textContent = 'A zóna ki van jelölve. A Google Maps a zóna területére zoomol (kontúrt a Google nem rajzol).';
+  } else {
+    elements.resultMessage.textContent = result.message;
+  }
   elements.mapsLink.href = googleMapsUrl(result);
-  elements.mapsLink.title = Number.isFinite(Number(result.latitude))
-    ? 'Megnyitás Google Mapsen a kijelölt pontnál'
-    : 'Megnyitás Google Mapsen';
+  elements.mapsLink.textContent = place ? 'Pont a Mapsen' : 'Zóna a Mapsen';
+  elements.mapsLink.title = place
+    ? 'Megnyitás Google Mapsen a településnél (tűvel)'
+    : 'Megnyitás Google Mapsen a zóna területére zoomolva';
 }
 function hideResult() {
   elements.resultCard.hidden = true;
   state.currentResult = null;
+  if (elements.mapsLink) {
+    elements.mapsLink.textContent = 'Google Maps';
+    elements.mapsLink.href = '#';
+  }
 }
 
 async function copyResult() {
