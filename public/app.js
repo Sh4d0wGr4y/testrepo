@@ -615,8 +615,8 @@ function buildLabels() {
     const icon = L.divIcon({
       className: `zone-label${item.selected ? ' is-selected' : ''}`,
       html: `<span>${item.prefix}</span>`,
-      iconSize: [40, 28],
-      iconAnchor: [20, 14]
+      iconSize: null,
+      iconAnchor: [15, 12]
     });
     L.marker(item.latLng, { icon, interactive: false, keyboard: false, pane: 'zoneLabelPane' }).addTo(state.labels);
   }

@@ -465,6 +465,12 @@ html[data-theme='dark'] .legend-chip { color: #d5e2d9; }
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
+  width: auto !important;
+  height: auto !important;
+}
+.leaflet-div-icon.zone-label {
+  margin-left: -15px !important;
+  margin-top: -12px !important;
 }
 .zone-label span {
   display: inline-flex;
