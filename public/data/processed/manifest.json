@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.23",
+  "appVersion": "3.3.24",
   "packagedAt": "2026-07-26T14:20:00.000Z",
-  "notes": "V3.3.23: Ctrl multi-select for zone-group filters."
+  "notes": "V3.3.24: ~2s map flight on country/filter transitions."
 }
