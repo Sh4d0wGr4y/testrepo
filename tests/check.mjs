@@ -73,11 +73,14 @@ assert.ok(indexHtml.includes('citiesToggle'));
 assert.ok(indexHtml.includes('clearFiltersButton'));
 assert.ok(!indexHtml.includes('countrySelect'));
 assert.ok(!indexHtml.includes('data-map-mode'));
+assert.ok(!indexHtml.includes('copyButton'));
+assert.ok(!indexHtml.includes('Másolás'));
+assert.ok(!app.includes('copyResult'));
 ok('ország zászlók, városok pipa, szűrő törlés');
 
 
 const manifest = JSON.parse(fs.readFileSync(path.join(publicDir, 'data/processed/manifest.json'), 'utf8'));
-assert.equal(manifest.appVersion, '3\.3\.10');
+assert.equal(manifest.appVersion, '3.3.10');
 ok('manifest appVersion');
 
 for (const [name, spec] of Object.entries(EXPECTED)) {
