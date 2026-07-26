@@ -1,276 +1,175 @@
 <!doctype html>
-<html lang="hu" data-theme="dark">
+<html lang="hu" data-theme="light">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#07100b" />
-  <meta name="description" content="F-TRANS fuvarszervezői irányítószám-kereső Magyarországhoz, Németországhoz és Olaszországhoz." />
+  <meta name="theme-color" content="#f4f7f5" />
+  <meta name="description" content="F-TRANS irányítószám- és postai zóna kereső Magyarországhoz, Németországhoz és Olaszországhoz." />
   <title>F-TRANS Irányítószám-kereső</title>
-  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles.css" />
-  <script src="app.js" defer></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/vendor/leaflet.css" />
+  <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <a class="skip-link" href="#mainContent">Ugrás a keresőhöz</a>
+  <a class="skip-link" href="#searchInput">Ugrás a keresőhöz</a>
 
   <div class="app-shell">
-    <header class="topbar">
-      <a class="brand" href="#mainContent" aria-label="F-TRANS Irányítószám-kereső kezdőlap">
-        <span class="brand-mark" aria-hidden="true">F</span>
-        <span class="brand-copy">
-          <strong>F-TRANS</strong>
-          <span>Irányítószám-kereső</span>
-        </span>
-      </a>
+    <aside class="sidebar" aria-label="Keresés és szűrés">
+      <header class="brand-row">
+        <a class="brand" href="#" aria-label="F-TRANS Irányítószám-kereső">
+          <svg class="brand-mark" viewBox="0 0 72 52" aria-hidden="true">
+            <path d="M9 8h49l-7 10H25l-3 5h25l-7 10H17L7 50H0L18 18H5z" fill="currentColor"/>
+            <path d="M0 14h14M0 24h10M0 34h7" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+          <span class="brand-copy"><strong>F-TRANS</strong><span>Irányítószám-kereső</span></span>
+        </a>
+        <div class="header-actions">
+          <button class="icon-button" id="infoButton" type="button" aria-label="Súgó" title="Súgó">i</button>
+          <button class="icon-button" id="themeButton" type="button" aria-label="Sötét téma bekapcsolása" title="Téma">☾</button>
+        </div>
+      </header>
 
-      <div class="top-actions">
-        <button class="icon-button" id="infoButton" type="button" aria-label="Névjegy és adatforrások" title="Névjegy és adatforrások">
-          <span aria-hidden="true">i</span>
-        </button>
-        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Világos téma bekapcsolása">
-          <span class="theme-icon" aria-hidden="true">☾</span>
-          <span class="theme-label">Sötét</span>
-        </button>
-      </div>
-    </header>
-
-    <main id="mainContent" tabindex="-1">
-      <section class="search-panel" aria-labelledby="searchTitle">
-        <div class="search-heading">
-          <div>
-            <p class="eyebrow">GYORS KERESÉS</p>
-            <h1 id="searchTitle">Melyik körzethez tartozik?</h1>
-          </div>
-          <p class="search-intro">Válassz országot, írd be a teljes irányítószámot, majd nyomd meg a Keresés gombot.</p>
+      <form id="searchForm" class="search-form" novalidate>
+        <label class="field-label" for="countrySelect">Ország</label>
+        <div class="select-wrap">
+          <span id="countryFlag" class="field-flag" aria-hidden="true">🇭🇺</span>
+          <select id="countrySelect" aria-label="Ország kiválasztása">
+            <option value="HU">Magyarország</option>
+            <option value="DE">Németország</option>
+            <option value="IT">Olaszország</option>
+          </select>
         </div>
 
-        <div class="country-selector" role="tablist" aria-label="Ország kiválasztása">
-          <button class="country-tab is-active" id="countryHU" type="button" role="tab" aria-selected="true" data-country="HU">
-            <span aria-hidden="true">🇭🇺</span>
-            <span>Magyarország</span>
-          </button>
-          <button class="country-tab" id="countryDE" type="button" role="tab" aria-selected="false" data-country="DE">
-            <span aria-hidden="true">🇩🇪</span>
-            <span>Németország</span>
-          </button>
-          <button class="country-tab" id="countryIT" type="button" role="tab" aria-selected="false" data-country="IT">
-            <span aria-hidden="true">🇮🇹</span>
-            <span>Olaszország</span>
+        <label class="field-label" for="searchInput">Irányítószám</label>
+        <div class="search-line">
+          <input id="searchInput" inputmode="numeric" autocomplete="postal-code" placeholder="Példa: 8600" aria-describedby="inputHelp" />
+          <button class="primary-button" id="searchButton" type="submit">
+            <span aria-hidden="true">⌕</span><span>Keresés</span>
           </button>
         </div>
+        <p class="field-help" id="inputHelp">Írd be a teljes irányítószámot.</p>
+      </form>
 
-        <form class="search-form" id="searchForm" novalidate>
-          <div class="field-group">
-            <label for="postcodeInput">Irányítószám</label>
-            <div class="input-shell" id="inputShell">
-              <span class="input-icon" aria-hidden="true">⌕</span>
-              <input
-                id="postcodeInput"
-                name="postcode"
-                type="text"
-                inputmode="numeric"
-                autocomplete="postal-code"
-                pattern="[0-9]*"
-                maxlength="4"
-                placeholder="Például: 8600"
-                aria-describedby="inputHint errorMessage"
-              />
-              <button class="clear-input" id="clearInput" type="button" aria-label="Irányítószám törlése" hidden>×</button>
-            </div>
-          </div>
-
-          <button class="primary-button" id="searchButton" type="submit" disabled>
-            <span class="button-label">Keresés</span>
-            <span class="button-arrow" aria-hidden="true">→</span>
-          </button>
-        </form>
-
-        <div class="search-feedback">
-          <p class="input-hint" id="inputHint">4 számjegy. A gyorskörzetet az első számjegy jelzi.</p>
-          <p class="error-message" id="errorMessage" role="alert" aria-live="polite"></p>
-        </div>
-
-        <div class="history-row" id="historyRow" hidden>
-          <div class="history-label">
-            <span>Legutóbbi</span>
-            <button id="clearHistory" class="quiet-button" type="button">Törlés</button>
-          </div>
-          <div class="history-chips" id="historyChips" aria-label="Legutóbbi keresések"></div>
+      <section class="control-section" aria-labelledby="mapViewTitle">
+        <div class="section-head"><h2 id="mapViewTitle">Térkép nézete</h2></div>
+        <div class="segmented" role="group" aria-label="Térkép nézete">
+          <button class="segment is-active" type="button" data-map-mode="color" aria-pressed="true">Színes zónák</button>
+          <button class="segment" type="button" data-map-mode="outline" aria-pressed="false">Egyszerű</button>
         </div>
       </section>
 
-      <section class="workspace" aria-label="Térkép és keresési eredmény">
-        <article class="map-card">
-          <header class="map-header">
-            <div class="map-title-group">
-              <span class="country-kicker" id="mapCountryLabel">🇭🇺 Magyarország</span>
-              <h2 id="mapTitle">Irányítószám-körzetek</h2>
-            </div>
+      <section class="control-section" aria-labelledby="rangeTitle">
+        <div class="section-head">
+          <div><h2 id="rangeTitle">Zóna-csoport</h2><p>Szűkítsd tízes csoportokra.</p></div>
+          <button class="text-button" id="showAllButton" type="button">Teljes ország</button>
+        </div>
+        <div class="range-grid" id="rangeGrid" role="group" aria-label="Zónacsoport kiválasztása"></div>
+      </section>
 
-            <div class="map-header-actions">
-              <a class="google-map-link" id="googleMapsLink" href="#" target="_blank" rel="noopener" hidden>
-                Google Maps <span aria-hidden="true">↗</span>
-              </a>
-              <div class="view-switch" role="tablist" aria-label="Térképnézet">
-                <button class="view-tab is-active" id="referenceTab" type="button" role="tab" aria-selected="true" data-view="reference">Körzet</button>
-                <button class="view-tab" id="locationTab" type="button" role="tab" aria-selected="false" data-view="location" disabled>Pontos hely</button>
-              </div>
-            </div>
-          </header>
+      <section class="control-section" aria-labelledby="quickTitle">
+        <div class="section-head"><h2 id="quickTitle">Gyors választás</h2></div>
+        <div class="quick-grid" id="quickGrid" role="group" aria-label="Postai zóna gyors kiválasztása"></div>
+        <p class="empty-note" id="quickEmpty" hidden>Ebben a csoportban nincs megjeleníthető zóna.</p>
+      </section>
 
-          <div class="map-stage" id="mapStage">
-            <section class="reference-view" id="referenceView" aria-label="Körzeti térkép">
-              <div class="map-loading" id="mapLoading" role="status" aria-live="polite" hidden>
-                <span class="spinner" aria-hidden="true"></span>
-                <strong>Térkép betöltése…</strong>
-              </div>
+      <section class="control-section history-section" aria-labelledby="historyTitle">
+        <div class="section-head">
+          <h2 id="historyTitle">Utolsó keresések</h2>
+          <button class="text-button" id="clearHistoryButton" type="button">Törlés</button>
+        </div>
+        <div class="history-list" id="historyList"></div>
+        <p class="empty-note" id="historyEmpty">Még nincs korábbi keresés.</p>
+      </section>
 
-              <div class="map-error" id="mapError" role="alert" hidden>
-                <strong>A körzeti térkép nem tölthető be.</strong>
-                <span>Az előző térkép megmaradt. Próbáld meg újra.</span>
-                <button class="secondary-button compact" id="retryMap" type="button">Újrapróbálás</button>
-              </div>
+      <footer class="sidebar-status">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="systemStatus">Rendszer állapota: Rendben</span>
+      </footer>
+    </aside>
 
-              <div class="map-scroll" id="mapScroll" tabindex="0" aria-label="Nagyítható körzeti térkép">
-                <img id="postcodeMap" src="assets/maps/hu-postcode.png" alt="Magyarország postai körzeti térképe" draggable="false" />
-              </div>
+    <main class="map-panel" id="mainContent">
+      <header class="map-toolbar">
+        <div>
+          <p class="eyebrow" id="countryName">MAGYARORSZÁG</p>
+          <h1 id="mapTitle">Postai zónák</h1>
+          <p id="mapSubtitle">Kattints egy területre, vagy válassz zónát a bal oldalon.</p>
+        </div>
+        <div class="map-actions">
+          <button class="secondary-button" id="fitCountryButton" type="button">Teljes ország</button>
+          <button class="secondary-button" id="clearSelectionButton" type="button">Kijelölés törlése</button>
+          <button class="icon-button map-fullscreen" id="fullscreenButton" type="button" aria-label="Teljes képernyő" title="Teljes képernyő">⛶</button>
+        </div>
+      </header>
 
-              <div class="selected-zone" id="selectedZone" hidden>
-                <span>KÖRZET</span>
-                <strong id="selectedPrefix">8</strong>
-              </div>
+      <div class="map-stage" id="mapStage">
+        <div id="map" aria-label="Interaktív postai zónatérkép"></div>
 
-              <div class="zoom-controls" aria-label="Térkép nagyítása">
-                <button id="zoomIn" type="button" aria-label="Nagyítás" title="Nagyítás">+</button>
-                <button id="zoomOut" type="button" aria-label="Kicsinyítés" title="Kicsinyítés">−</button>
-                <button id="resetMap" type="button" aria-label="Teljes ország nézet" title="Teljes ország nézet">⌂</button>
-              </div>
-            </section>
+        <div class="map-loading" id="mapLoading" role="status" aria-live="polite">
+          <span class="loader" aria-hidden="true"></span>
+          <strong id="loadingText">Térkép betöltése…</strong>
+          <button class="secondary-button retry-button" id="retryButton" type="button" hidden>Újrapróbálom</button>
+        </div>
 
-            <section class="location-view" id="locationView" aria-label="Pontos térképi hely" hidden>
-              <div class="location-empty" id="locationEmpty">
-                <span class="location-icon" aria-hidden="true">◎</span>
-                <h3>Még nincs pontos hely</h3>
-                <p>Sikeres keresés után itt jelenik meg a település OpenStreetMap-nézete.</p>
-              </div>
-
-              <div class="location-frame-wrap" id="locationFrameWrap" hidden>
-                <div class="location-loading" id="locationLoading">
-                  <span class="spinner" aria-hidden="true"></span>
-                  <strong>Pontos hely betöltése…</strong>
-                </div>
-                <iframe
-                  id="osmFrame"
-                  title="A keresett irányítószám pontos térképi helye"
-                  loading="lazy"
-                  referrerpolicy="no-referrer"
-                ></iframe>
-              </div>
-            </section>
-          </div>
-
-          <div class="zone-picker" id="zonePicker">
-            <button class="zone-picker-toggle" id="zonePickerToggle" type="button" aria-expanded="false" aria-controls="zonePickerPanel">
-              <span>Magyar gyorskörzetek</span>
-              <span aria-hidden="true">⌄</span>
-            </button>
-            <div class="zone-picker-panel" id="zonePickerPanel" hidden></div>
-          </div>
-        </article>
-
-        <aside class="result-card" id="resultCard" aria-live="polite" aria-busy="false">
-          <div class="result-initial" id="resultInitial">
-            <span class="result-initial-icon" aria-hidden="true">#</span>
-            <h2>Az eredmény itt jelenik meg</h2>
-            <p>Válassz országot, majd adj meg egy irányítószámot.</p>
-            <div class="example-row" id="exampleRow" aria-label="Példák"></div>
-          </div>
-
-          <div class="result-loading" id="resultLoading" hidden>
-            <span class="spinner large" aria-hidden="true"></span>
-            <h2>Irányítószám ellenőrzése…</h2>
-            <p>A körzet már látható, a települési adatot most kérjük le.</p>
-          </div>
-
-          <div class="result-content" id="resultContent" hidden>
-            <div class="result-status" id="resultStatus">
-              <span class="status-dot" aria-hidden="true"></span>
-              <span id="resultStatusText">Ellenőrzött találat</span>
-            </div>
-
-            <p class="result-postcode" id="resultPostcode">8600</p>
-            <h2 class="result-place" id="resultPlace">Siófok</h2>
-
-            <div class="result-primary-details">
-              <div>
-                <span>Körzet</span>
-                <strong id="resultZone">8-as körzet</strong>
-              </div>
-              <div>
-                <span>Régió / tartomány</span>
-                <strong id="resultRegion">Somogy</strong>
-              </div>
-            </div>
-
-            <p class="result-message" id="resultMessage"></p>
-
-            <div class="result-actions">
-              <button class="primary-button result-map-button" id="showOnMap" type="button">
-                <span>Térképen</span>
-                <span aria-hidden="true">◎</span>
-              </button>
-              <button class="secondary-button" id="copyResult" type="button">Másolás</button>
-            </div>
-
-            <button class="retry-search" id="retrySearch" type="button" hidden>Online ellenőrzés újra</button>
-
-            <details class="technical-details">
-              <summary>További részletek</summary>
-              <dl>
-                <div><dt>Ország</dt><dd id="detailCountry">Magyarország</dd></div>
-                <div><dt>Vizsgált előtag</dt><dd id="detailPrefix">8</dd></div>
-                <div><dt>Koordináta</dt><dd id="detailCoords">46.9000, 18.1000</dd></div>
-                <div><dt>Ellenőrzés</dt><dd id="detailVerification">Zippopotam.us</dd></div>
-              </dl>
-            </details>
-
-            <p class="safety-note">Indulás előtt mindig ellenőrizd a teljes címet és a rakodóhelyet.</p>
+        <aside class="result-card" id="resultCard" aria-live="polite" hidden>
+          <button class="result-close" id="resultCloseButton" type="button" aria-label="Találat bezárása">×</button>
+          <span class="result-badge" id="resultBadge">Kiválasztott zóna</span>
+          <div class="result-code" id="resultCode">8</div>
+          <h2 id="resultPlace">8-as postai zóna</h2>
+          <p id="resultRegion">Magyarország</p>
+          <dl class="result-details">
+            <div><dt>Teljes kód</dt><dd id="detailPostcode">—</dd></div>
+            <div><dt>Település</dt><dd id="detailPlace">—</dd></div>
+            <div><dt>Régió</dt><dd id="detailRegion">—</dd></div>
+          </dl>
+          <p class="result-message" id="resultMessage"></p>
+          <div class="result-actions">
+            <button class="secondary-button" id="copyButton" type="button">Másolás</button>
+            <a class="primary-link" id="mapsLink" href="#" target="_blank" rel="noopener noreferrer">Google Maps</a>
           </div>
         </aside>
-      </section>
-    </main>
 
-    <footer>
-      <span>F-TRANS Irányítószám-kereső</span>
-      <span>V2.1</span>
-    </footer>
+        <div class="map-legend" id="mapLegend">
+          <span class="legend-gradient" aria-hidden="true"></span>
+          <span>A színek csak a zónák elkülönítését segítik.</span>
+        </div>
+      </div>
+
+      <footer class="map-footer">
+        <span id="dataStatus">Térképi adatok betöltése…</span>
+        <span>V3.3 · szűrhető kétpaneles nézet</span>
+      </footer>
+    </main>
   </div>
 
   <dialog class="info-dialog" id="infoDialog">
     <form method="dialog">
-      <button class="dialog-close" type="submit" aria-label="Bezárás">×</button>
-      <p class="eyebrow">NÉVJEGY ÉS ADATFORRÁSOK</p>
-      <h2>F-TRANS Irányítószám-kereső</h2>
-      <p>A teljes irányítószámot a Zippopotam.us adatbázisa ellenőrzi. A körzeti képek gyors tájékozódási referenciák, a pontos helyet az OpenStreetMap mutatja.</p>
-
-      <div class="info-grid">
-        <div><strong>Magyarország</strong><span>4 számjegy, 1 jegyű gyorskörzet</span></div>
-        <div><strong>Németország</strong><span>5 számjegy, 2 jegyű PLZ-körzet</span></div>
-        <div><strong>Olaszország</strong><span>5 számjegy, 2 jegyű CAP-körzet</span></div>
-        <div><strong>Verzió</strong><span>V2.1 – stabil térképváltás</span></div>
-      </div>
-
-      <h3>Nyílt adatforrások</h3>
-      <ul class="source-list">
-        <li><a href="https://api.zippopotam.us/" target="_blank" rel="noopener">Zippopotam.us API</a> – település, régió és koordináta.</li>
-        <li><a href="https://commons.wikimedia.org/wiki/File:2_digit_postcode_hungary.png" target="_blank" rel="noopener">Magyar körzeti térkép</a> – GfK GeoMarketing, CC BY-SA 3.0.</li>
-        <li><a href="https://commons.wikimedia.org/wiki/File:German_postcode_information.png" target="_blank" rel="noopener">Német körzeti térkép</a> – Stefan Kühn, CC0.</li>
-        <li><a href="https://commons.wikimedia.org/wiki/File:2_digit_postcode_italy.png" target="_blank" rel="noopener">Olasz körzeti térkép</a> – GfK GeoMarketing, CC BY-SA 3.0.</li>
-        <li><a href="https://www.openstreetmap.org/" target="_blank" rel="noopener">OpenStreetMap</a> – pontos térképi hely.</li>
-      </ul>
+      <button class="dialog-close" value="cancel" aria-label="Bezárás">×</button>
+      <h2>Hogyan használd?</h2>
+      <p>Válassz országot, adj meg egy teljes irányítószámot, majd nyomd meg a Keresés gombot.</p>
+      <p>A <strong>Zóna-csoport</strong> gombokkal tízesével szűkítheted a sok körzetet. A térképen és a Gyors választás résznél csak az adott csoport kerül előtérbe.</p>
+      <p>A térkép gyors tájékozódást segít. Fuvarindítás előtt mindig ellenőrizd a teljes címet és a teljes irányítószámot.</p>
+      <button class="primary-button dialog-ok" value="ok">Rendben</button>
     </form>
   </dialog>
 
-  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="/vendor/leaflet.js"></script>
+  <script>
+    if (typeof L === 'undefined') {
+      document.documentElement.dataset.leafletMissing = '1';
+      window.addEventListener('DOMContentLoaded', function () {
+        var loading = document.getElementById('mapLoading');
+        var text = document.getElementById('loadingText');
+        var retry = document.getElementById('retryButton');
+        var status = document.getElementById('systemStatus');
+        if (text) text.textContent = 'A térképkönyvtár nem töltődött be.';
+        if (loading) loading.hidden = false;
+        if (retry) { retry.hidden = false; retry.onclick = function () { location.reload(); }; }
+        if (status) status.textContent = 'Rendszer állapota: Térképhiba';
+      });
+    }
+  </script>
+  <script src="/app.js" defer></script>
 </body>
 </html>

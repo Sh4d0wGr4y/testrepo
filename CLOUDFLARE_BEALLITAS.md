@@ -1,41 +1,23 @@
-# Cloudflare GitHub-kapcsolat – egyszeri beállítás
+# Cloudflare beállítás (V3.3)
 
-## 1. Repository létrehozása
+## Teszt Worker
 
-GitHubon hozz létre egy új, üres repositoryt:
+- Név: `ftrans-iranyitoszam-terkep-v3-test`
+- Deploy: `npm run deploy:test`
+- Konfig: `wrangler.jsonc` (alapból a teszt Worker neve)
 
-- Owner: `Sh4d0wGr4y`
-- Repository name: `ftrans-iranyitoszam-terkep`
-- Visibility: **Private** ajánlott
-- Ne adj hozzá README, `.gitignore` vagy licenc fájlt, mert ezeket a projekt már tartalmazza.
+## Éles Worker
 
-## 2. Projekt feltöltése
+- Név: `ftrans-iranyitoszam-terkep`
+- Csak külön felhasználói jóváhagyás után módosítható.
+- Élesítéskor a `wrangler.jsonc` `name` mezőjét ideiglenesen az éles névre kell állítani, vagy:
 
-A repository létrehozása után a kész fájlok feltölthetők a GitHub webes felületén, vagy a kapcsolódó ChatGPT GitHub-eszközzel.
+```bash
+npx wrangler deploy --name ftrans-iranyitoszam-terkep
+```
 
-## 3. Meglévő Worker összekapcsolása
+## Fontos
 
-Cloudflare Dashboard → Workers & Pages → `ftrans-iranyitoszam-terkep` → Settings → Builds → Connect.
-
-Beállítások:
-
-- Git provider: GitHub
-- Git account: `Sh4d0wGr4y`
-- Repository: `ftrans-iranyitoszam-terkep`
-- Production branch: `main`
-- Root directory: `/`
-- Build command: üres
-- Deploy command: `npx wrangler deploy`
-- Non-production branch deploy command: alapértelmezett `npx wrangler versions upload`
-
-## 4. Első telepítés
-
-Mentés után indítsd el az első buildet. Később minden `main` branchre kerülő commit automatikusan frissíti a Workert.
-
-## Fontos névellenőrzés
-
-A Cloudflare Worker neve és a `wrangler.jsonc` fájl `name` mezője ugyanaz:
-
-`ftrans-iranyitoszam-terkep`
-
-Eltérő név esetén a Cloudflare build hibával leáll.
+- Ne tölts fel API-tokent a repositoryba.
+- A `/data/*` és `/vendor/*` útvonalakon tilos az SPA HTML fallback.
+- Telepítés után mindig ellenőrizd a `/__health` választ.

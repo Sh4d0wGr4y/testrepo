@@ -1,13 +1,18 @@
 {
   "name": "ftrans-iranyitoszam-terkep",
-  "version": "2.1.0",
+  "version": "3.3.0",
   "private": true,
-  "description": "F-TRANS irányítószám-kereső és körzeti térkép Cloudflare Workers Static Assets telepítéssel.",
+  "description": "F-TRANS irányítószám-kereső V3.3 – önálló GeoJSON + Leaflet, Cloudflare Workers.",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "deploy:test": "wrangler deploy --name ftrans-iranyitoszam-terkep-v3-test",
+    "test": "node tests/check.mjs",
+    "test:labels": "node tests/label-points.mjs",
+    "test:browser": "node tests/browser-smoke.mjs"
   },
   "devDependencies": {
+    "playwright": "^1.54.1",
     "wrangler": "^4.94.0"
   }
 }
