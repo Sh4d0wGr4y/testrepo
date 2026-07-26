@@ -824,6 +824,16 @@ function boundsForFeature(feature) {
   return L.latLngBounds(latLngs);
 }
 
+function fullFeatureBounds(feature) {
+  if (!feature?.geometry) return null;
+  try {
+    const bounds = L.geoJSON(feature).getBounds();
+    return bounds?.isValid() ? bounds : boundsForFeature(feature);
+  } catch {
+    return boundsForFeature(feature);
+  }
+}
+
 function fitFeature(feature, options = {}) {
   const bounds = boundsForFeature(feature);
   if (!bounds?.isValid()) return false;
@@ -844,7 +854,7 @@ function fitActiveRange() {
   const layers = [];
   for (const [prefix, feature] of state.features.entries()) {
     if (!inActiveRange(prefix)) continue;
-    const bounds = boundsForFeature(feature);
+    const bounds = fullFeatureBounds(feature);
     if (bounds?.isValid()) layers.push(bounds);
   }
   if (!layers.length) {
@@ -853,7 +863,11 @@ function fitActiveRange() {
   }
   let merged = layers[0];
   for (let i = 1; i < layers.length; i += 1) merged = merged.extend(layers[i]);
-  map.fitBounds(merged, { padding: [28, 28], animate: false, maxZoom: state.country === 'HU' ? 8 : 8 });
+  map.fitBounds(merged, {
+    padding: [36, 36],
+    animate: false,
+    maxZoom: state.country === 'HU' ? 8 : 7
+  });
   scheduleMapRefresh();
 }
 
