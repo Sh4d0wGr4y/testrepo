@@ -116,17 +116,27 @@ try {
   const placePin = await page.locator('.place-map-pin').count();
   if (placePin < 1) throw new Error('DE keresés után nincs helyjelölő a térképen');
   const mapsHref = await page.locator('#mapsLink').getAttribute('href');
-  // Keresés = konkrét hely → tű (q=lat,lng). Zónakattintás = terület (@lat,lng,z).
-  if (!mapsHref || !/maps\?q=52\./.test(mapsHref)) {
+  // Keresés = konkrét hely → tű (query=lat,lng). Zónakattintás = terület (map_action=map).
+  if (!mapsHref || !/query=52\./.test(mapsHref)) {
     throw new Error(`DE keresés Maps link hibás (tű kell): ${mapsHref}`);
   }
   await page.click('.quick-button:text-is("10")');
   await wait(500);
+  // Ugyanarra a gombra kattintás most TORLI a kijelölést — ezért előbb másikra, majd vissza 10-re.
+  const cleared = await page.locator('.quick-button.is-active').count();
+  if (cleared !== 0) throw new Error('DE 10-es gomb nem oldotta fel a kijelölést');
+  await page.click('.quick-button:text-is("10")');
+  await wait(500);
   const zoneHref = await page.locator('#mapsLink').getAttribute('href');
-  if (!zoneHref || !/google\.com\/maps\/@52\./.test(zoneHref)) {
-    throw new Error(`DE zóna Maps link hibás (területnézet kell): ${zoneHref}`);
+  if (!zoneHref || !/map_action=map/.test(zoneHref) || !/center=52\./.test(zoneHref)) {
+    throw new Error(`DE zóna Maps link hibás (területnézet kell, tű nélkül): ${zoneHref}`);
   }
-  console.log('OK: keresés=tű, zóna=területnézet, szűrő tiszta');
+  // Váltás másik zónára gombbal (DE-ben nincs 11-es prefix → 12)
+  await page.click('.quick-button:text-is("12")');
+  await wait(400);
+  const switched = (await page.locator('.quick-button.is-active').textContent())?.trim();
+  if (switched !== '12') throw new Error(`Nem lehetett másik zónára váltani: ${switched}`);
+  console.log('OK: keresés=tű, zóna=területnézet, váltás/törlés működik');
 
   // HU keresés
   await page.click('.country-flag-button[data-country="HU"]');

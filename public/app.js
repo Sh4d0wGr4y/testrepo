@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.8';
+const APP_VERSION = '3.3.9';
 
 const CONFIG = {
   HU: {
@@ -679,6 +679,7 @@ function createGeoLayer(data, nextCountry, nextGroups, nextFeatures) {
         try { event.originalEvent?.preventDefault(); } catch {}
       });
       polygon.on('click', (event) => {
+        L.DomEvent.stopPropagation(event);
         try {
           const target = event.originalEvent?.target;
           if (target) {
@@ -697,15 +698,7 @@ function createGeoLayer(data, nextCountry, nextGroups, nextFeatures) {
           fillOpacity: state.selectedPrefix ? 0.28 : 0.7,
           opacity: 0.9
         });
-        if (event.target.bringToFront) event.target.bringToFront();
-        // A kijelölt zóna mindig maradjon felül.
-        if (state.selectedPrefix && state.layer) {
-          state.layer.eachLayer((layer) => {
-            if (String(layer.feature?.properties?.prefix ?? '') === state.selectedPrefix && layer.bringToFront) {
-              layer.bringToFront();
-            }
-          });
-        }
+        // Ne hozzuk előre a hovered zónát a kijelölt fölé — különben a váltás beragadhat.
       });
       polygon.on('mouseout', (event) => event.target.setStyle(polygonStyle(feature)));
     }
@@ -953,6 +946,12 @@ function fitCountry(animate = false) {
 }
 
 function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
+  // Ugyanarra a zónára kattintva / gombbal: kijelölés feloldása (lehessen „lekattintani”).
+  if (state.selectedPrefix === prefix && !fullCode && !options.force) {
+    clearSelection();
+    toast('Kijelölés törölve.');
+    return;
+  }
   if (!state.groups.has(prefix)) {
     showResult({
       prefix,
@@ -964,6 +963,7 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
     });
     return;
   }
+  clearPlaceMarker();
   state.selectedPrefix = prefix;
   const range = rangeForPrefix(state.country, prefix);
   // Csoportszűrőt csak explicit kérésre kapcsolunk (ne alapból).
@@ -976,10 +976,11 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
 
   if (fit) {
     const feature = state.features.get(prefix);
-    if (!fitFeature(feature, { maxZoom: state.country === 'HU' ? 8 : 9 })) {
+    // Lazább zoom: maradjon hely a szomszédos zónákra is, hogy át lehessen kattintani.
+    if (!fitFeature(feature, { maxZoom: state.country === 'HU' ? 7 : 8, padding: [72, 72] })) {
       const bounds = L.featureGroup(state.groups.get(prefix)).getBounds();
       if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [55, 55], maxZoom: state.country === 'HU' ? 8 : 9, animate: false });
+        map.fitBounds(bounds, { padding: [72, 72], maxZoom: state.country === 'HU' ? 7 : 8, animate: false });
       }
     }
   }
@@ -991,7 +992,7 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
     place: '',
     region: '',
     verified: false,
-    message: 'A zóna ki van jelölve. A Google Maps a zóna területére zoomol (kontúrt a Google nem rajzol).'
+    message: 'A zóna ki van jelölve. Újabb zónára kattintva válthatsz; ugyanarra kattintva törlődik. A Google Maps csak a területre zoomol (kontúrt nem rajzol).'
   });
 }
 
@@ -1118,33 +1119,38 @@ function isPlaceResult(result) {
   return Boolean(result?.verified && result?.postcode && Number.isFinite(Number(result.latitude)) && Number.isFinite(Number(result.longitude)));
 }
 
+function googleMapsAreaUrl(lat, lon, zoom) {
+  // Hivatalos Maps URL: map_action=map → NINCS tű / place pin, csak a nézet.
+  const z = Math.max(5, Math.min(14, Number(zoom) || 10));
+  return `https://www.google.com/maps/@?api=1&map_action=map&center=${Number(lat).toFixed(5)},${Number(lon).toFixed(5)}&zoom=${z}`;
+}
+
 function googleMapsUrl(result) {
   // Konkrét település / irányítószám → tű a címen.
   if (isPlaceResult(result)) {
     const lat = Number(result.latitude);
     const lon = Number(result.longitude);
-    return `https://maps.google.com/maps?q=${lat.toFixed(5)},${lon.toFixed(5)}&ll=${lat.toFixed(5)},${lon.toFixed(5)}&z=14`;
+    return `https://www.google.com/maps/search/?api=1&query=${lat.toFixed(5)},${lon.toFixed(5)}`;
   }
 
-  // Zóna / szűrés → a zóna TELJES területére zoomol (nem egy félrevezető középső tű).
-  // A Google Maps webes linkkel nem tudja kirajzolni a mi poligonunkat, de a nézet egyezhet.
+  // Zóna / szűrés → területnézet TŰ NÉLKÜL (Google nem rajzolja ki a poligonunkat).
   const feature = result.prefix ? zoneFeature(result.prefix) : null;
   const bounds = feature ? (fullFeatureBounds(feature) || boundsForFeature(feature)) : null;
   if (bounds?.isValid()) {
     const c = bounds.getCenter();
-    const zoom = zoomForLatLngBounds(bounds);
-    return `https://www.google.com/maps/@${c.lat.toFixed(5)},${c.lng.toFixed(5)},${zoom}z`;
+    // Egy fokozattal távolabbról, hogy ne „egy pontnak” tűnjön.
+    const zoom = Math.max(5, zoomForLatLngBounds(bounds, 1.15) - 1);
+    return googleMapsAreaUrl(c.lat, c.lng, zoom);
   }
 
   const center = result.prefix ? zoneMapCenter(String(result.prefix)) : null;
   if (center) {
-    const zoom = center.bounds ? zoomForLatLngBounds(center.bounds) : 10;
-    return `https://www.google.com/maps/@${center.latitude.toFixed(5)},${center.longitude.toFixed(5)},${zoom}z`;
+    const zoom = Math.max(5, (center.bounds ? zoomForLatLngBounds(center.bounds, 1.15) : 10) - 1);
+    return googleMapsAreaUrl(center.latitude, center.longitude, zoom);
   }
 
   const cfg = CONFIG[state.country];
-  const query = [result.postcode, result.place, cfg.name].filter(Boolean).join(' ');
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query || cfg.name)}`;
+  return googleMapsAreaUrl(cfg.center[0], cfg.center[1], cfg.zoom);
 }
 
 function showResult(result) {
@@ -1168,17 +1174,17 @@ function showResult(result) {
   if (!result.message) {
     elements.resultMessage.textContent = place
       ? 'A teljes irányítószám települési adatait online ellenőriztük.'
-      : 'A zóna ki van jelölve. A Google Maps a zóna területére zoomol (kontúrt a Google nem rajzol).';
-  } else if (!place && result.message.includes('zöld keret')) {
-    elements.resultMessage.textContent = 'A zóna ki van jelölve. A Google Maps a zóna területére zoomol (kontúrt a Google nem rajzol).';
+      : 'A zóna ki van jelölve. Újabb zónára kattintva válthatsz; ugyanarra kattintva törlődik. A Google Maps csak a területre zoomol (kontúrt nem rajzol).';
+  } else if (!place && (result.message.includes('zöld keret') || result.message.includes('kontúrt'))) {
+    elements.resultMessage.textContent = 'A zóna ki van jelölve. Újabb zónára kattintva válthatsz; ugyanarra kattintva törlődik. A Google Maps csak a területre zoomol (kontúrt nem rajzol).';
   } else {
     elements.resultMessage.textContent = result.message;
   }
   elements.mapsLink.href = googleMapsUrl(result);
-  elements.mapsLink.textContent = place ? 'Pont a Mapsen' : 'Zóna a Mapsen';
+  elements.mapsLink.textContent = place ? 'Pont a Mapsen' : 'Terület a Mapsen';
   elements.mapsLink.title = place
     ? 'Megnyitás Google Mapsen a településnél (tűvel)'
-    : 'Megnyitás Google Mapsen a zóna területére zoomolva';
+    : 'Megnyitás Google Mapsen a zóna területére zoomolva, tű nélkül (a zónahatárt a Google nem rajzolja)';
 }
 function hideResult() {
   elements.resultCard.hidden = true;
@@ -1337,7 +1343,10 @@ function bindEvents() {
   }
   elements.fitCountryButton.addEventListener('click', () => fitCountry(false));
   elements.clearSelectionButton.addEventListener('click', clearSelection);
-  elements.resultCloseButton.addEventListener('click', hideResult);
+  elements.resultCloseButton.addEventListener('click', () => {
+    // A × ne csak a kártyát rejtse el — oldja fel a zónakijelölést is.
+    clearSelection();
+  });
   elements.copyButton.addEventListener('click', copyResult);
   elements.clearHistoryButton.addEventListener('click', () => {
     state.history = [];
@@ -1361,6 +1370,12 @@ function bindEvents() {
     });
   }
   document.addEventListener('fullscreenchange', scheduleMapRefresh);
+  // Üres térképkattintás: kijelölés feloldása (a zónapoligonok stopPropagation-nel jönnek).
+  map.on('click', () => {
+    if (state.selectedPrefix || state.placeMarker || state.currentResult) {
+      clearSelection();
+    }
+  });
   map.on('zoomend moveend', () => setTimeout(buildLabels, 20));
   window.addEventListener('resize', scheduleMapRefresh, { passive: true });
   if ('ResizeObserver' in window) new ResizeObserver(scheduleMapRefresh).observe($('mapStage'));
