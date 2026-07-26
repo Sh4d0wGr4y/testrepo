@@ -47,7 +47,7 @@ for (const rel of REQUIRED_FILES) {
 
 const worker = fs.readFileSync(path.join(root, 'src/index.js'), 'utf8');
 assert.match(worker, /__health/);
-assert.match(worker, /APP_VERSION = '3\.3\.24'/);
+assert.match(worker, /APP_VERSION = '3\.3\.25'/);
 ok('worker /__health és verzió');
 
 const app = fs.readFileSync(path.join(publicDir, 'app.js'), 'utf8');
@@ -109,11 +109,12 @@ assert.ok(app.includes('showRangeColors'));
 assert.ok(app.includes('showQuickColors'));
 assert.ok(app.includes('activeRanges'));
 assert.ok(app.includes('toggleActiveRange'));
+assert.ok(app.includes('fitFocus'));
 ok('ország zászlók, városok pipa, szűrő törlés');
 
 
 const manifest = JSON.parse(fs.readFileSync(path.join(publicDir, 'data/processed/manifest.json'), 'utf8'));
-assert.equal(manifest.appVersion, '3.3.24');
+assert.equal(manifest.appVersion, '3.3.25');
 ok('manifest appVersion');
 
 for (const [name, spec] of Object.entries(EXPECTED)) {

@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.21';
+const APP_VERSION = '3.3.25';
 
 const CONFIG = {
   HU: {
@@ -529,7 +529,7 @@ function buildRangeButtons() {
       buildRangeButtons();
       buildQuickButtons();
       buildLabels();
-      if (hasActiveRanges()) fitActiveRange(true);
+      if (hasActiveRanges()) fitFocus(true);
       else fitCountry(true);
       if (additive && hasActiveRanges()) {
         toast(`${state.activeRanges.length} zónacsoport kijelölve.`);
@@ -917,7 +917,7 @@ function createGeoLayer(data, nextCountry, nextGroups, nextFeatures) {
           }
         } catch {}
         const additive = Boolean(event.originalEvent?.ctrlKey || event.originalEvent?.metaKey);
-        selectPrefix(prefix, false, '', { additive });
+        selectPrefix(prefix, true, '', { additive });
       });
       polygon.on('mouseover', (event) => {
         if (isSelectedPrefix(prefix)) return;
@@ -1208,9 +1208,10 @@ function fitActiveRange(smooth = true) {
     return;
   }
   const fit = countryFitOptions();
+  const multi = state.activeRanges.length > 1;
   softFitBounds(merged, {
-    padding: [36, 36],
-    maxZoom: fit.rangeMaxZoom,
+    padding: multi ? [44, 44] : [36, 36],
+    maxZoom: multi ? Math.min(fit.rangeMaxZoom, fit.countryMaxZoom) : fit.rangeMaxZoom,
     duration: smooth ? undefined : 0.01
   });
 }
@@ -1238,10 +1239,24 @@ function fitSelectedZones(smooth = true) {
   const fit = countryFitOptions();
   const multi = state.selectedPrefixes.size > 1;
   softFitBounds(merged, {
-    padding: multi ? [48, 48] : [56, 56],
-    maxZoom: multi ? Math.min(fit.rangeMaxZoom, fit.zoneMaxZoom) : fit.zoneMaxZoom,
+    padding: multi ? [52, 52] : [56, 56],
+    // Több kijelölésnél hagyjuk jobban kitágulni a nézetet, hogy minden ráférjen.
+    maxZoom: multi ? Math.min(fit.rangeMaxZoom, fit.countryMaxZoom) : fit.zoneMaxZoom,
     duration: smooth ? undefined : 0.01
   });
+}
+
+/** Aktuális fókusz: kijelölt zónák, vagy zónacsoport(ok), vagy teljes ország. */
+function fitFocus(smooth = true) {
+  if (hasZoneSelection()) {
+    fitSelectedZones(smooth);
+    return;
+  }
+  if (hasActiveRanges()) {
+    fitActiveRange(smooth);
+    return;
+  }
+  fitCountry(smooth);
 }
 
 function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
@@ -1253,11 +1268,14 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
     else state.selectedPrefixes.add(key);
     if (!hasZoneSelection()) {
       clearSelection();
+      // Ha van még aktív zónacsoport, arra igazítsunk vissza.
+      if (fit) fitFocus(true);
       toast('Kijelölés törölve.');
       return;
     }
   } else if (isSelectedPrefix(key) && state.selectedPrefixes.size === 1 && !fullCode && !options.force) {
     clearSelection();
+    if (fit) fitFocus(true);
     toast('Kijelölés törölve.');
     return;
   } else {
@@ -1285,18 +1303,7 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
   buildRangeButtons();
   buildQuickButtons();
 
-  if (fit) {
-    if (state.selectedPrefixes.size > 1) {
-      fitSelectedZones(true);
-    } else {
-      const feature = state.features.get(key);
-      const fitOpts = countryFitOptions();
-      if (!fitFeature(feature, { maxZoom: fitOpts.zoneMaxZoom, padding: [56, 56] })) {
-        const bounds = L.featureGroup(state.groups.get(key)).getBounds();
-        if (bounds.isValid()) softFitBounds(bounds, { padding: [56, 56], maxZoom: fitOpts.zoneMaxZoom });
-      }
-    }
-  }
+  if (fit) fitFocus(true);
   scheduleMapRefresh();
   setTimeout(buildLabels, 50);
 
@@ -1401,7 +1408,7 @@ async function executeSearch(rawValue, options = {}) {
     } else {
       const duration = flightDurationSeconds(map.getCenter(), target, map.getZoom(), zoom);
       try {
-        map.flyTo(target, zoom, { duration, easeLinearity: 0.55 });
+        map.flyTo(target, zoom, { duration, easeLinearity: 0.42 });
       } catch {
         map.setView(target, zoom, { animate: true });
       }
