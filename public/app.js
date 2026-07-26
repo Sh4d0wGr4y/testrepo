@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.5';
+const APP_VERSION = '3.3.6';
 
 const CONFIG = {
   HU: {
@@ -1069,23 +1069,6 @@ function zoneMapCenter(prefix) {
   return null;
 }
 
-function mapsZoomForResult(result) {
-  if (result.postcode && result.verified) return state.country === 'HU' ? 13 : 14;
-  const feature = result.prefix ? state.features.get(result.prefix) : null;
-  const bounds = feature ? (fullFeatureBounds(feature) || boundsForFeature(feature)) : null;
-  if (bounds?.isValid()) {
-    const span = Math.max(
-      Math.abs(bounds.getNorth() - bounds.getSouth()),
-      Math.abs(bounds.getEast() - bounds.getWest())
-    );
-    if (span > 2.5) return 7;
-    if (span > 1.4) return 8;
-    if (span > 0.8) return 9;
-    if (span > 0.4) return 10;
-    return 11;
-  }
-  return state.country === 'HU' ? 9 : 8;
-}
 
 function googleMapsUrl(result) {
   const cfg = CONFIG[state.country];
@@ -1099,9 +1082,16 @@ function googleMapsUrl(result) {
     }
   }
   if (Number.isFinite(lat) && Number.isFinite(lon)) {
-    const zoom = mapsZoomForResult(result);
-    // @lat,lng,zoom — a kijelölt zóna / település környékét nyitja, nem az egész országot
-    return `https://www.google.com/maps/@${lat.toFixed(5)},${lon.toFixed(5)},${zoom}z`;
+    // search?query=lat,lng → piros tűvel jelöli a pontot (a @lat,lng,z csak odavisz, jelölés nélkül)
+    if (result.place && result.postcode) {
+      const q = `${lat.toFixed(5)},${lon.toFixed(5)} (${result.postcode} ${result.place})`;
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+    }
+    if (result.prefix && !result.postcode) {
+      const q = `${lat.toFixed(5)},${lon.toFixed(5)} (${result.prefix}-es postai zóna, ${cfg.name})`;
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+    }
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat.toFixed(5)},${lon.toFixed(5)}`)}`;
   }
   const query = [result.postcode, result.place, result.prefix ? `${result.prefix}-es postai zóna` : '', cfg.name]
     .filter(Boolean)

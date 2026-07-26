@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.5",
+  "appVersion": "3.3.6",
   "packagedAt": "2026-07-26T09:30:00.000Z",
-  "notes": "V3.3.5: Google Maps link opens selected zone center, not whole country."
+  "notes": "V3.3.6: Google Maps opens zone/place with a pin marker, not bare map view."
 }
