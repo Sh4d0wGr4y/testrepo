@@ -44,7 +44,7 @@ for (const rel of REQUIRED_FILES) {
 
 const worker = fs.readFileSync(path.join(root, 'src/index.js'), 'utf8');
 assert.match(worker, /__health/);
-assert.match(worker, /APP_VERSION = '3\.3\.13'/);
+assert.match(worker, /APP_VERSION = '3\.3\.14'/);
 ok('worker /__health és verzió');
 
 const app = fs.readFileSync(path.join(publicDir, 'app.js'), 'utf8');
@@ -81,6 +81,7 @@ assert.ok(indexHtml.includes('citiesToggle'));
 assert.ok(indexHtml.includes('colorsToggle'));
 assert.ok(indexHtml.includes('labelsToggle'));
 assert.ok(indexHtml.includes('labelColorsToggle'));
+assert.ok(indexHtml.includes('buttonColorsToggle'));
 assert.ok(indexHtml.includes('fsCountryFlags'));
 assert.ok(indexHtml.includes('clear-filters-button'));
 assert.ok(!indexHtml.includes('systemStatus'));
@@ -90,11 +91,15 @@ assert.ok(!indexHtml.includes('data-map-mode'));
 assert.ok(!indexHtml.includes('copyButton'));
 assert.ok(!indexHtml.includes('Másolás'));
 assert.ok(!app.includes('copyResult'));
+assert.ok(app.includes('softFitBounds'));
+assert.ok(app.includes('fitActiveRange'));
+assert.ok(app.includes('fitSelectedZones'));
+assert.ok(app.includes('showButtonColors'));
 ok('ország zászlók, városok pipa, szűrő törlés');
 
 
 const manifest = JSON.parse(fs.readFileSync(path.join(publicDir, 'data/processed/manifest.json'), 'utf8'));
-assert.equal(manifest.appVersion, '3.3.13');
+assert.equal(manifest.appVersion, '3.3.14');
 ok('manifest appVersion');
 
 for (const [name, spec] of Object.entries(EXPECTED)) {

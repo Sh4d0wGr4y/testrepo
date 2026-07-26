@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.13",
-  "packagedAt": "2026-07-26T09:30:00.000Z",
-  "notes": "V3.3.13: optional colored zone numbers; premium palette + UI polish."
+  "appVersion": "3.3.14",
+  "packagedAt": "2026-07-26T14:00:00.000Z",
+  "notes": "V3.3.14: soft filter flyToBounds focus; toggleable colored range/quick swatches."
 }

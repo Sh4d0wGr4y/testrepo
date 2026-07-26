@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.13';
+const APP_VERSION = '3.3.14';
 
 const CONFIG = {
   HU: {
@@ -148,6 +148,7 @@ const CITIES_KEY = 'ftrans-show-cities-v3';
 const COLORS_KEY = 'ftrans-show-colors-v3';
 const LABELS_KEY = 'ftrans-show-labels-v3';
 const LABEL_COLORS_KEY = 'ftrans-show-label-colors-v3';
+const BUTTON_COLORS_KEY = 'ftrans-show-button-colors-v3';
 
 function readFlag(key, fallback) {
   try {
@@ -171,12 +172,14 @@ function readShowLabels() { return readFlag(LABELS_KEY, true); }
 function saveShowLabels() { saveFlag(LABELS_KEY, state.showZoneLabels); }
 function readShowLabelColors() { return readFlag(LABEL_COLORS_KEY, false); }
 function saveShowLabelColors() { saveFlag(LABEL_COLORS_KEY, state.showLabelColors); }
+function readShowButtonColors() { return readFlag(BUTTON_COLORS_KEY, false); }
+function saveShowButtonColors() { saveFlag(BUTTON_COLORS_KEY, state.showButtonColors); }
 
 const $ = (id) => document.getElementById(id);
 const elements = {
   countryFlags: $('countryFlags'), searchForm: $('searchForm'), searchInput: $('searchInput'),
   inputHelp: $('inputHelp'), rangeGrid: $('rangeGrid'), quickGrid: $('quickGrid'), quickEmpty: $('quickEmpty'),
-  showAllButton: $('showAllButton'), clearFiltersButton: $('clearFiltersButton'), citiesToggle: $('citiesToggle'), colorsToggle: $('colorsToggle'), labelsToggle: $('labelsToggle'), labelColorsToggle: $('labelColorsToggle'), labelColorsToggleRow: $('labelColorsToggleRow'), fsCountryFlags: $('fsCountryFlags'),
+  showAllButton: $('showAllButton'), clearFiltersButton: $('clearFiltersButton'), citiesToggle: $('citiesToggle'), colorsToggle: $('colorsToggle'), labelsToggle: $('labelsToggle'), labelColorsToggle: $('labelColorsToggle'), labelColorsToggleRow: $('labelColorsToggleRow'), buttonColorsToggle: $('buttonColorsToggle'), fsCountryFlags: $('fsCountryFlags'),
   historyList: $('historyList'), historyEmpty: $('historyEmpty'), clearHistoryButton: $('clearHistoryButton'),
   countryName: $('countryName'), mapTitle: $('mapTitle'), mapSubtitle: $('mapSubtitle'), mapLoading: $('mapLoading'), loadingText: $('loadingText'),
   retryButton: $('retryButton'),
@@ -202,6 +205,7 @@ const state = {
   showZoneColors: readShowColors(),
   showZoneLabels: readShowLabels(),
   showLabelColors: readShowLabelColors(),
+  showButtonColors: readShowButtonColors(),
   currentResult: null, lastSuccessfulResult: null,
   dataCache: new Map(), loadToken: 0, controller: null,
   history: readHistory(), manifest: null, lastLoadError: null
@@ -227,7 +231,7 @@ const map = L.map('map', {
   zoomControl: true,
   preferCanvas: false,
   fadeAnimation: false,
-  zoomAnimation: false,
+  zoomAnimation: true,
   markerZoomAnimation: false,
   inertia: true,
   minZoom: 3,
@@ -444,12 +448,23 @@ function buildRangeButtons() {
     return;
   }
   if (section) section.hidden = false;
+  const digits = CONFIG[state.country].prefixDigits;
   for (const range of getRanges(state.country)) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = `range-button${state.activeRange?.min === range.min ? ' is-active' : ''}`;
-    button.textContent = range.label;
-    button.setAttribute('aria-pressed', String(state.activeRange?.min === range.min));
+    const active = state.activeRange?.min === range.min;
+    button.className = `range-button${active ? ' is-active' : ''}${state.showButtonColors ? ' has-swatch' : ''}`;
+    const mid = Math.round((range.min + range.max) / 2);
+    const swatchPrefix = String(mid).padStart(digits, '0');
+    const swatch = colorFor(swatchPrefix);
+    if (state.showButtonColors) {
+      button.style.setProperty('--swatch', swatch);
+      button.style.setProperty('--swatch-soft', shadeColor(swatch, 0.42));
+    }
+    button.innerHTML = state.showButtonColors
+      ? `<i class="btn-swatch" aria-hidden="true"></i><span>${range.label}</span>`
+      : range.label;
+    button.setAttribute('aria-pressed', String(active));
     button.addEventListener('click', () => {
       state.activeRange = range;
       state.selectedPrefixes.clear();
@@ -459,7 +474,7 @@ function buildRangeButtons() {
       buildRangeButtons();
       buildQuickButtons();
       buildLabels();
-      fitActiveRange();
+      fitActiveRange(true);
     });
     elements.rangeGrid.appendChild(button);
   }
@@ -473,8 +488,15 @@ function buildQuickButtons() {
   for (const prefix of filtered) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = `quick-button${isSelectedPrefix(prefix) ? ' is-active' : ''}`;
-    button.textContent = prefix;
+    button.className = `quick-button${isSelectedPrefix(prefix) ? ' is-active' : ''}${state.showButtonColors ? ' has-swatch' : ''}`;
+    if (state.showButtonColors) {
+      const swatch = colorFor(prefix);
+      button.style.setProperty('--swatch', swatch);
+      button.style.setProperty('--swatch-soft', shadeColor(swatch, 0.42));
+      button.innerHTML = `<i class="btn-swatch" aria-hidden="true"></i><span>${prefix}</span>`;
+    } else {
+      button.textContent = prefix;
+    }
     button.setAttribute('aria-pressed', String(isSelectedPrefix(prefix)));
     button.addEventListener('click', (event) => selectPrefix(prefix, true, '', { additive: event.ctrlKey || event.metaKey }));
     elements.quickGrid.appendChild(button);
@@ -918,7 +940,7 @@ async function loadCountry(nextCountry, options = {}) {
     buildQuickButtons();
     hideResult();
     restyleMap();
-    fitCountry(false);
+    fitCountry(true);
     scheduleMapRefresh();
     setTimeout(buildLabels, 60);
     renderCities();
@@ -1057,21 +1079,47 @@ function fullFeatureBounds(feature) {
   }
 }
 
-function fitFeature(feature, options = {}) {
-  const bounds = boundsForFeature(feature);
+function softFitBounds(bounds, options = {}) {
   if (!bounds?.isValid()) return false;
-  map.fitBounds(bounds, {
-    padding: options.padding || [55, 55],
-    maxZoom: options.maxZoom ?? (state.country === 'HU' ? 8 : 9),
-    animate: false
-  });
+  const opts = {
+    padding: options.padding || [48, 48],
+    maxZoom: options.maxZoom ?? (state.country === 'HU' ? 8 : 8),
+    duration: options.duration ?? 0.95,
+    easeLinearity: 0.2
+  };
+  try {
+    if (typeof map.flyToBounds === 'function') {
+      map.flyToBounds(bounds, opts);
+    } else {
+      map.fitBounds(bounds, { padding: opts.padding, maxZoom: opts.maxZoom, animate: true });
+    }
+  } catch {
+    map.fitBounds(bounds, { padding: opts.padding, maxZoom: opts.maxZoom, animate: true });
+  }
   scheduleMapRefresh();
   return true;
 }
 
-function fitActiveRange() {
+function mergeBoundsList(list) {
+  if (!list.length) return null;
+  let merged = list[0];
+  for (let i = 1; i < list.length; i += 1) merged = merged.extend(list[i]);
+  return merged?.isValid() ? merged : null;
+}
+
+function fitFeature(feature, options = {}) {
+  const bounds = fullFeatureBounds(feature) || boundsForFeature(feature);
+  if (!bounds?.isValid()) return false;
+  return softFitBounds(bounds, {
+    padding: options.padding || [55, 55],
+    maxZoom: options.maxZoom ?? (state.country === 'HU' ? 8 : 9),
+    duration: options.duration ?? 0.9
+  });
+}
+
+function fitActiveRange(smooth = true) {
   if (!state.activeRange || !state.features.size) {
-    fitCountry(false);
+    fitCountry(smooth);
     return;
   }
   const layers = [];
@@ -1080,25 +1128,44 @@ function fitActiveRange() {
     const bounds = fullFeatureBounds(feature);
     if (bounds?.isValid()) layers.push(bounds);
   }
-  if (!layers.length) {
-    fitCountry(false);
+  const merged = mergeBoundsList(layers);
+  if (!merged) {
+    fitCountry(smooth);
     return;
   }
-  let merged = layers[0];
-  for (let i = 1; i < layers.length; i += 1) merged = merged.extend(layers[i]);
-  map.fitBounds(merged, {
-    padding: [36, 36],
-    animate: false,
-    maxZoom: state.country === 'HU' ? 8 : 7
+  softFitBounds(merged, {
+    padding: [40, 40],
+    maxZoom: state.country === 'HU' ? 8 : 7,
+    duration: smooth ? 1.05 : 0.01
   });
-  scheduleMapRefresh();
 }
 
-function fitCountry(animate = false) {
-  if (state.layer?.getBounds().isValid()) {
-    map.fitBounds(state.layer.getBounds(), { padding: [18, 18], animate: false, maxZoom: CONFIG[state.country].zoom + 1 });
-    scheduleMapRefresh();
+function fitCountry(smooth = true) {
+  if (!state.layer?.getBounds().isValid()) return;
+  softFitBounds(state.layer.getBounds(), {
+    padding: [22, 22],
+    maxZoom: CONFIG[state.country].zoom + 1,
+    duration: smooth ? 1.1 : 0.01
+  });
+}
+
+function fitSelectedZones(smooth = true) {
+  if (!hasZoneSelection()) return;
+  const layers = [];
+  for (const prefix of state.selectedPrefixes) {
+    const feature = state.features.get(prefix);
+    const bounds = fullFeatureBounds(feature) || boundsForFeature(feature);
+    if (bounds?.isValid()) layers.push(bounds);
   }
+  const merged = mergeBoundsList(layers);
+  if (!merged) return;
+  softFitBounds(merged, {
+    padding: state.selectedPrefixes.size > 1 ? [56, 56] : [72, 72],
+    maxZoom: state.selectedPrefixes.size > 1
+      ? (state.country === 'HU' ? 7 : 7)
+      : (state.country === 'HU' ? 7 : 8),
+    duration: smooth ? 0.95 : 0.01
+  });
 }
 
 function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
@@ -1142,12 +1209,14 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
   buildRangeButtons();
   buildQuickButtons();
 
-  if (fit && !additive) {
-    const feature = state.features.get(key);
-    if (!fitFeature(feature, { maxZoom: state.country === 'HU' ? 7 : 8, padding: [72, 72] })) {
-      const bounds = L.featureGroup(state.groups.get(key)).getBounds();
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [72, 72], maxZoom: state.country === 'HU' ? 7 : 8, animate: false });
+  if (fit) {
+    if (state.selectedPrefixes.size > 1) {
+      fitSelectedZones(true);
+    } else {
+      const feature = state.features.get(key);
+      if (!fitFeature(feature, { maxZoom: state.country === 'HU' ? 7 : 8, padding: [72, 72], duration: 0.95 })) {
+        const bounds = L.featureGroup(state.groups.get(key)).getBounds();
+        if (bounds.isValid()) softFitBounds(bounds, { padding: [72, 72], maxZoom: state.country === 'HU' ? 7 : 8, duration: 0.95 });
       }
     }
   }
@@ -1247,7 +1316,13 @@ async function executeSearch(rawValue, options = {}) {
   }
   if (lookup.verified && Number.isFinite(lookup.latitude) && Number.isFinite(lookup.longitude)) {
     showPlaceMarker(lookup.latitude, lookup.longitude, result.place || value);
-    map.setView([lookup.latitude, lookup.longitude], state.country === 'HU' ? 10 : 11, { animate: false });
+    const zoom = state.country === 'HU' ? 10 : 11;
+    try {
+      if (typeof map.flyTo === 'function') map.flyTo([lookup.latitude, lookup.longitude], zoom, { duration: 0.9, easeLinearity: 0.2 });
+      else map.setView([lookup.latitude, lookup.longitude], zoom, { animate: true });
+    } catch {
+      map.setView([lookup.latitude, lookup.longitude], zoom, { animate: true });
+    }
     scheduleMapRefresh();
   }
   setInputMessage(lookup.networkError ? 'A zóna megjelent, de a hálózati ellenőrzés nem sikerült.' : 'A találat megjelent a térképen.', Boolean(lookup.networkError));
@@ -1509,7 +1584,7 @@ function clearAllFilters() {
   buildRangeButtons();
   buildQuickButtons();
   buildLabels();
-  fitCountry(false);
+  fitCountry(true);
   toast('Minden szűrőt töröltem.');
 }
 
@@ -1541,7 +1616,7 @@ function bindEvents() {
     buildRangeButtons();
     buildQuickButtons();
     buildLabels();
-    fitCountry(false);
+    fitCountry(true);
   });
   if (elements.clearFiltersButton) {
     elements.clearFiltersButton.addEventListener('click', clearAllFilters);
@@ -1585,6 +1660,15 @@ function bindEvents() {
       buildLabels();
     });
   }
+  if (elements.buttonColorsToggle) {
+    elements.buttonColorsToggle.checked = state.showButtonColors;
+    elements.buttonColorsToggle.addEventListener('change', () => {
+      state.showButtonColors = Boolean(elements.buttonColorsToggle.checked);
+      saveShowButtonColors();
+      buildRangeButtons();
+      buildQuickButtons();
+    });
+  }
   if (elements.fsCountryFlags) {
     elements.fsCountryFlags.querySelectorAll('[data-country]').forEach((button) => {
       button.addEventListener('click', () => {
@@ -1594,7 +1678,7 @@ function bindEvents() {
       });
     });
   }
-  elements.fitCountryButton.addEventListener('click', () => fitCountry(false));
+  elements.fitCountryButton.addEventListener('click', () => fitCountry(true));
   elements.clearSelectionButton.addEventListener('click', clearSelection);
   elements.resultCloseButton.addEventListener('click', () => {
     clearSelection();
@@ -1652,6 +1736,7 @@ async function init() {
   if (elements.colorsToggle) elements.colorsToggle.checked = state.showZoneColors;
   if (elements.labelsToggle) elements.labelsToggle.checked = state.showZoneLabels;
   if (elements.labelColorsToggle) elements.labelColorsToggle.checked = state.showLabelColors;
+  if (elements.buttonColorsToggle) elements.buttonColorsToggle.checked = state.showButtonColors;
   syncLabelColorToggle();
   syncCountryFlags();
   updateFullscreenFlags();
