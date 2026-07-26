@@ -78,25 +78,37 @@
             <input id="citiesToggle" type="checkbox" />
             <span>Nagyvárosok</span>
           </label>
-          <label class="check-row" for="buttonColorsToggle">
-            <input id="buttonColorsToggle" type="checkbox" />
-            <span class="swatch-legend" aria-hidden="true"></span>
-            <span>Színes szűrőgombok</span>
-          </label>
         </div>
         <button class="clear-filters-button full-width" id="clearFiltersButton" type="button">Összes szűrő törlése</button>
       </section>
 
-      <section class="control-section" aria-labelledby="rangeTitle">
+      <section class="control-section" aria-labelledby="rangeTitle" id="rangeSection">
         <div class="section-head">
-          <div><h2 id="rangeTitle">Zóna-csoport</h2><p>Szűkítsd tízes csoportokra.</p></div>
-          <button class="text-button" id="showAllButton" type="button">Teljes ország</button>
+          <div>
+            <h2 id="rangeTitle">Zóna-csoport</h2>
+            <p>Szűkítsd tízes csoportokra.</p>
+          </div>
+          <div class="section-head-actions">
+            <label class="mini-check" for="rangeColorsToggle" title="Színes zónacsoport-gombok">
+              <input id="rangeColorsToggle" type="checkbox" />
+              <span class="swatch-legend" aria-hidden="true"></span>
+              <span>Színes</span>
+            </label>
+            <button class="text-button" id="showAllButton" type="button">Teljes ország</button>
+          </div>
         </div>
         <div class="range-grid" id="rangeGrid" role="group" aria-label="Zónacsoport kiválasztása"></div>
       </section>
 
       <section class="control-section" aria-labelledby="quickTitle">
-        <div class="section-head"><h2 id="quickTitle">Gyors választás</h2></div>
+        <div class="section-head">
+          <h2 id="quickTitle">Gyors választás</h2>
+          <label class="mini-check" for="quickColorsToggle" title="Színes gyorsválasztó gombok">
+            <input id="quickColorsToggle" type="checkbox" />
+            <span class="swatch-legend" aria-hidden="true"></span>
+            <span>Színes</span>
+          </label>
+        </div>
         <div class="quick-grid" id="quickGrid" role="group" aria-label="Postai zóna gyors kiválasztása"></div>
         <p class="empty-note" id="quickEmpty" hidden>Ebben a csoportban nincs megjeleníthető zóna.</p>
       </section>
@@ -177,7 +189,7 @@
 
       <footer class="map-footer">
         <span id="dataStatus">Térképi adatok betöltése…</span>
-        <span>V3.3.16 · szűrhető kétpaneles nézet</span>
+        <span>V3.3.17 · szűrhető kétpaneles nézet</span>
       </footer>
     </main>
   </div>

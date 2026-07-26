@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.16';
+const APP_VERSION = '3.3.17';
 
 const CONFIG = {
   HU: {
@@ -151,7 +151,8 @@ const CITIES_KEY = 'ftrans-show-cities-v3';
 const COLORS_KEY = 'ftrans-show-colors-v3';
 const LABELS_KEY = 'ftrans-show-labels-v3';
 const LABEL_COLORS_KEY = 'ftrans-show-label-colors-v3';
-const BUTTON_COLORS_KEY = 'ftrans-show-button-colors-v3';
+const RANGE_COLORS_KEY = 'ftrans-show-range-colors-v3';
+const QUICK_COLORS_KEY = 'ftrans-show-quick-colors-v3';
 
 function readFlag(key, fallback) {
   try {
@@ -175,14 +176,16 @@ function readShowLabels() { return readFlag(LABELS_KEY, true); }
 function saveShowLabels() { saveFlag(LABELS_KEY, state.showZoneLabels); }
 function readShowLabelColors() { return readFlag(LABEL_COLORS_KEY, false); }
 function saveShowLabelColors() { saveFlag(LABEL_COLORS_KEY, state.showLabelColors); }
-function readShowButtonColors() { return readFlag(BUTTON_COLORS_KEY, false); }
-function saveShowButtonColors() { saveFlag(BUTTON_COLORS_KEY, state.showButtonColors); }
+function readShowRangeColors() { return readFlag(RANGE_COLORS_KEY, false); }
+function saveShowRangeColors() { saveFlag(RANGE_COLORS_KEY, state.showRangeColors); }
+function readShowQuickColors() { return readFlag(QUICK_COLORS_KEY, false); }
+function saveShowQuickColors() { saveFlag(QUICK_COLORS_KEY, state.showQuickColors); }
 
 const $ = (id) => document.getElementById(id);
 const elements = {
   countryFlags: $('countryFlags'), searchForm: $('searchForm'), searchInput: $('searchInput'),
   inputHelp: $('inputHelp'), rangeGrid: $('rangeGrid'), quickGrid: $('quickGrid'), quickEmpty: $('quickEmpty'),
-  showAllButton: $('showAllButton'), clearFiltersButton: $('clearFiltersButton'), citiesToggle: $('citiesToggle'), colorsToggle: $('colorsToggle'), labelsToggle: $('labelsToggle'), labelColorsToggle: $('labelColorsToggle'), labelColorsToggleRow: $('labelColorsToggleRow'), buttonColorsToggle: $('buttonColorsToggle'), fsCountryFlags: $('fsCountryFlags'),
+  showAllButton: $('showAllButton'), clearFiltersButton: $('clearFiltersButton'), citiesToggle: $('citiesToggle'), colorsToggle: $('colorsToggle'), labelsToggle: $('labelsToggle'), labelColorsToggle: $('labelColorsToggle'), labelColorsToggleRow: $('labelColorsToggleRow'), rangeColorsToggle: $('rangeColorsToggle'), quickColorsToggle: $('quickColorsToggle'), fsCountryFlags: $('fsCountryFlags'),
   historyList: $('historyList'), historyEmpty: $('historyEmpty'), clearHistoryButton: $('clearHistoryButton'),
   countryName: $('countryName'), mapTitle: $('mapTitle'), mapSubtitle: $('mapSubtitle'), mapLoading: $('mapLoading'), loadingText: $('loadingText'),
   retryButton: $('retryButton'),
@@ -208,7 +211,8 @@ const state = {
   showZoneColors: readShowColors(),
   showZoneLabels: readShowLabels(),
   showLabelColors: readShowLabelColors(),
-  showButtonColors: readShowButtonColors(),
+  showRangeColors: readShowRangeColors(),
+  showQuickColors: readShowQuickColors(),
   currentResult: null, lastSuccessfulResult: null,
   dataCache: new Map(), loadToken: 0, controller: null,
   history: readHistory(), manifest: null, lastLoadError: null,
@@ -479,15 +483,15 @@ function buildRangeButtons() {
     const button = document.createElement('button');
     button.type = 'button';
     const active = state.activeRange?.min === range.min;
-    button.className = `range-button${active ? ' is-active' : ''}${state.showButtonColors ? ' has-swatch' : ''}`;
+    button.className = `range-button${active ? ' is-active' : ''}${state.showRangeColors ? ' has-swatch' : ''}`;
     const mid = Math.round((range.min + range.max) / 2);
     const swatchPrefix = String(mid).padStart(digits, '0');
     const swatch = colorFor(swatchPrefix);
-    if (state.showButtonColors) {
+    if (state.showRangeColors) {
       button.style.setProperty('--swatch', swatch);
       button.style.setProperty('--swatch-soft', shadeColor(swatch, 0.42));
     }
-    button.innerHTML = state.showButtonColors
+    button.innerHTML = state.showRangeColors
       ? `<i class="btn-swatch" aria-hidden="true"></i><span>${range.label}</span>`
       : range.label;
     button.setAttribute('aria-pressed', String(active));
@@ -514,8 +518,8 @@ function buildQuickButtons() {
   for (const prefix of filtered) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = `quick-button${isSelectedPrefix(prefix) ? ' is-active' : ''}${state.showButtonColors ? ' has-swatch' : ''}`;
-    if (state.showButtonColors) {
+    button.className = `quick-button${isSelectedPrefix(prefix) ? ' is-active' : ''}${state.showQuickColors ? ' has-swatch' : ''}`;
+    if (state.showQuickColors) {
       const swatch = colorFor(prefix);
       button.style.setProperty('--swatch', swatch);
       button.style.setProperty('--swatch-soft', shadeColor(swatch, 0.42));
@@ -1753,12 +1757,19 @@ function bindEvents() {
       buildLabels();
     });
   }
-  if (elements.buttonColorsToggle) {
-    elements.buttonColorsToggle.checked = state.showButtonColors;
-    elements.buttonColorsToggle.addEventListener('change', () => {
-      state.showButtonColors = Boolean(elements.buttonColorsToggle.checked);
-      saveShowButtonColors();
+  if (elements.rangeColorsToggle) {
+    elements.rangeColorsToggle.checked = state.showRangeColors;
+    elements.rangeColorsToggle.addEventListener('change', () => {
+      state.showRangeColors = Boolean(elements.rangeColorsToggle.checked);
+      saveShowRangeColors();
       buildRangeButtons();
+    });
+  }
+  if (elements.quickColorsToggle) {
+    elements.quickColorsToggle.checked = state.showQuickColors;
+    elements.quickColorsToggle.addEventListener('change', () => {
+      state.showQuickColors = Boolean(elements.quickColorsToggle.checked);
+      saveShowQuickColors();
       buildQuickButtons();
     });
   }
@@ -1829,7 +1840,8 @@ async function init() {
   if (elements.colorsToggle) elements.colorsToggle.checked = state.showZoneColors;
   if (elements.labelsToggle) elements.labelsToggle.checked = state.showZoneLabels;
   if (elements.labelColorsToggle) elements.labelColorsToggle.checked = state.showLabelColors;
-  if (elements.buttonColorsToggle) elements.buttonColorsToggle.checked = state.showButtonColors;
+  if (elements.rangeColorsToggle) elements.rangeColorsToggle.checked = state.showRangeColors;
+  if (elements.quickColorsToggle) elements.quickColorsToggle.checked = state.showQuickColors;
   syncLabelColorToggle();
   syncCountryFlags();
   updateFullscreenFlags();
