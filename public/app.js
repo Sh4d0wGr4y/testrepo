@@ -238,11 +238,11 @@ function polygonStyle(feature) {
   }
   return {
     renderer: svgRenderer,
-    color: selected ? '#0d5c24' : 'rgba(20, 40, 28, 0.55)',
-    weight: selected ? 3.2 : 1.05,
-    opacity: selected ? 1 : 0.85,
+    color: selected ? '#1faa45' : 'rgba(20, 40, 28, 0.45)',
+    weight: selected ? 3 : 1.05,
+    opacity: selected ? 1 : 0.8,
     fillColor: fill,
-    fillOpacity: selected ? 0.88 : 0.58,
+    fillOpacity: selected ? 0.9 : 0.58,
     lineCap: 'round',
     lineJoin: 'round',
     className: selected ? 'ftrans-zone-path is-selected' : 'ftrans-zone-path',
@@ -661,7 +661,7 @@ function createGeoLayer(data, nextCountry, nextGroups, nextFeatures) {
         if (prefix !== state.selectedPrefix) {
           event.target.setStyle({
             weight: 2.2,
-            color: '#0d5c24',
+            color: '#1faa45',
             fillOpacity: Math.min(0.78, Math.max(polygonStyle(feature).fillOpacity, 0.5))
           });
           if (event.target.bringToFront) event.target.bringToFront();
@@ -795,6 +795,7 @@ function updateLegend() {
     elements.mapLegend.dataset.scale = hu ? 'hu' : 'multi';
   }
   const chips = document.getElementById('legendChips');
+  const gradientRow = document.querySelector('.legend-scale-row');
   if (chips) {
     chips.replaceChildren();
     if (hu) {
@@ -810,6 +811,7 @@ function updateLegend() {
       chips.hidden = true;
     }
   }
+  if (gradientRow) gradientRow.hidden = hu;
   const gradient = document.querySelector('.legend-gradient');
   if (gradient) gradient.hidden = hu;
   if (elements.legendMin) elements.legendMin.hidden = hu;
@@ -950,7 +952,7 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
     place: '',
     region: '',
     verified: false,
-    message: 'A zóna ki van jelölve. A sötétzöld keret a kiválasztott területet mutatja.'
+    message: 'A zóna ki van jelölve. A zöld keret a kiválasztott területet mutatja.'
   });
 }
 
