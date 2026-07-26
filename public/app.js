@@ -1,22 +1,25 @@
 'use strict';
 
-const APP_VERSION = '3.3.14';
+const APP_VERSION = '3.3.15';
 
 const CONFIG = {
   HU: {
     name: 'Magyarország', flag: '🇭🇺', api: 'hu', digits: 4, prefixDigits: 1,
     file: '/data/processed/hu_prefix1.geojson', center: [47.16, 19.42], zoom: 7,
-    placeholder: 'Példa: 8600', groupMode: 'HU'
+    placeholder: 'Példa: 8600', groupMode: 'HU',
+    fit: { countryMaxZoom: 8, rangeMaxZoom: 9, rangeMaxZoom: 8, countryPadding: [36, 36] }
   },
   DE: {
     name: 'Németország', flag: '🇩🇪', api: 'de', digits: 5, prefixDigits: 2,
-    file: '/data/processed/de_prefix2.geojson', center: [51.12, 10.35], zoom: 6,
-    placeholder: 'Példa: 10115', groupMode: 'DE'
+    file: '/data/processed/de_prefix2.geojson', center: [51.16, 10.45], zoom: 6,
+    placeholder: 'Példa: 10115', groupMode: 'DE',
+    fit: { countryMaxZoom: 8, rangeMaxZoom: 9, rangeMaxZoom: 8, countryPadding: [28, 28] }
   },
   IT: {
     name: 'Olaszország', flag: '🇮🇹', api: 'it', digits: 5, prefixDigits: 2,
-    file: '/data/processed/it_prefix2.geojson', center: [42.55, 12.55], zoom: 6,
-    placeholder: 'Példa: 20121', groupMode: 'IT'
+    file: '/data/processed/it_prefix2.geojson', center: [42.5, 12.5], zoom: 6,
+    placeholder: 'Példa: 20121', groupMode: 'IT',
+    fit: { countryMaxZoom: 7, rangeMaxZoom: 9, rangeMaxZoom: 8, countryPadding: [30, 30] }
   }
 };
 
@@ -412,7 +415,26 @@ function setInputMessage(message = 'Írd be a teljes irányítószámot.', error
   elements.inputHelp.classList.toggle('is-error', error);
 }
 function scheduleMapRefresh() {
-  requestAnimationFrame(() => requestAnimationFrame(() => map.invalidateSize({ pan: false, animate: false })));
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    map.invalidateSize({ pan: false, animate: false });
+  }));
+}
+
+function countryFitOptions() {
+  return CONFIG[state.country]?.fit || {
+    countryMaxZoom: 8,
+    rangeMaxZoom: 8,
+    zoneMaxZoom: 8,
+    countryPadding: [32, 32]
+  };
+}
+
+function prepareMapSize() {
+  try {
+    map.invalidateSize({ pan: false, animate: false });
+  } catch {
+    /* ignore */
+  }
 }
 
 function getRanges(country) {
@@ -940,9 +962,18 @@ async function loadCountry(nextCountry, options = {}) {
     buildQuickButtons();
     hideResult();
     restyleMap();
-    fitCountry(true);
-    scheduleMapRefresh();
-    setTimeout(buildLabels, 60);
+    prepareMapSize();
+    // Először méretezzük a panelt, aztán középre az országot – különben DE/IT túl kicsi marad.
+    requestAnimationFrame(() => {
+      prepareMapSize();
+      fitCountry(true);
+      scheduleMapRefresh();
+      setTimeout(() => {
+        prepareMapSize();
+        if (!hasZoneSelection() && !state.activeRange) fitCountry(false);
+        setTimeout(buildLabels, 40);
+      }, 120);
+    });
     renderCities();
     updateLegend();
 
@@ -1081,17 +1112,19 @@ function fullFeatureBounds(feature) {
 
 function softFitBounds(bounds, options = {}) {
   if (!bounds?.isValid()) return false;
+  prepareMapSize();
+  const fit = countryFitOptions();
   const opts = {
-    padding: options.padding || [48, 48],
-    maxZoom: options.maxZoom ?? (state.country === 'HU' ? 8 : 8),
+    padding: options.padding || fit.countryPadding || [40, 40],
+    maxZoom: options.maxZoom ?? fit.countryMaxZoom ?? 8,
     duration: options.duration ?? 0.95,
-    easeLinearity: 0.2
+    easeLinearity: 0.18
   };
   try {
-    if (typeof map.flyToBounds === 'function') {
+    if (typeof map.flyToBounds === 'function' && (opts.duration || 0) > 0.05) {
       map.flyToBounds(bounds, opts);
     } else {
-      map.fitBounds(bounds, { padding: opts.padding, maxZoom: opts.maxZoom, animate: true });
+      map.fitBounds(bounds, { padding: opts.padding, maxZoom: opts.maxZoom, animate: opts.duration > 0.05 });
     }
   } catch {
     map.fitBounds(bounds, { padding: opts.padding, maxZoom: opts.maxZoom, animate: true });
@@ -1110,9 +1143,10 @@ function mergeBoundsList(list) {
 function fitFeature(feature, options = {}) {
   const bounds = fullFeatureBounds(feature) || boundsForFeature(feature);
   if (!bounds?.isValid()) return false;
+  const fit = countryFitOptions();
   return softFitBounds(bounds, {
-    padding: options.padding || [55, 55],
-    maxZoom: options.maxZoom ?? (state.country === 'HU' ? 8 : 9),
+    padding: options.padding || [48, 48],
+    maxZoom: options.maxZoom ?? fit.zoneMaxZoom,
     duration: options.duration ?? 0.9
   });
 }
@@ -1133,19 +1167,21 @@ function fitActiveRange(smooth = true) {
     fitCountry(smooth);
     return;
   }
+  const fit = countryFitOptions();
   softFitBounds(merged, {
-    padding: [40, 40],
-    maxZoom: state.country === 'HU' ? 8 : 7,
+    padding: [36, 36],
+    maxZoom: fit.rangeMaxZoom,
     duration: smooth ? 1.05 : 0.01
   });
 }
 
 function fitCountry(smooth = true) {
   if (!state.layer?.getBounds().isValid()) return;
+  const fit = countryFitOptions();
   softFitBounds(state.layer.getBounds(), {
-    padding: [22, 22],
-    maxZoom: CONFIG[state.country].zoom + 1,
-    duration: smooth ? 1.1 : 0.01
+    padding: fit.countryPadding,
+    maxZoom: fit.countryMaxZoom,
+    duration: smooth ? 1.05 : 0.01
   });
 }
 
@@ -1159,11 +1195,11 @@ function fitSelectedZones(smooth = true) {
   }
   const merged = mergeBoundsList(layers);
   if (!merged) return;
+  const fit = countryFitOptions();
+  const multi = state.selectedPrefixes.size > 1;
   softFitBounds(merged, {
-    padding: state.selectedPrefixes.size > 1 ? [56, 56] : [72, 72],
-    maxZoom: state.selectedPrefixes.size > 1
-      ? (state.country === 'HU' ? 7 : 7)
-      : (state.country === 'HU' ? 7 : 8),
+    padding: multi ? [48, 48] : [56, 56],
+    maxZoom: multi ? Math.min(fit.rangeMaxZoom, fit.zoneMaxZoom) : fit.zoneMaxZoom,
     duration: smooth ? 0.95 : 0.01
   });
 }
@@ -1214,9 +1250,10 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
       fitSelectedZones(true);
     } else {
       const feature = state.features.get(key);
-      if (!fitFeature(feature, { maxZoom: state.country === 'HU' ? 7 : 8, padding: [72, 72], duration: 0.95 })) {
+      const fitOpts = countryFitOptions();
+      if (!fitFeature(feature, { maxZoom: fitOpts.zoneMaxZoom, padding: [56, 56], duration: 0.95 })) {
         const bounds = L.featureGroup(state.groups.get(key)).getBounds();
-        if (bounds.isValid()) softFitBounds(bounds, { padding: [72, 72], maxZoom: state.country === 'HU' ? 7 : 8, duration: 0.95 });
+        if (bounds.isValid()) softFitBounds(bounds, { padding: [56, 56], maxZoom: fitOpts.zoneMaxZoom, duration: 0.95 });
       }
     }
   }

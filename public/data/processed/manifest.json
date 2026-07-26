@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.14",
-  "packagedAt": "2026-07-26T14:00:00.000Z",
-  "notes": "V3.3.14: soft filter flyToBounds focus; toggleable colored range/quick swatches."
+  "appVersion": "3.3.15",
+  "packagedAt": "2026-07-26T14:20:00.000Z",
+  "notes": "V3.3.15: fix country centering — viewport-locked map panel + per-country fit."
 }
