@@ -107,7 +107,7 @@ def main() -> None:
     parser.add_argument(
         "--coast-buffer",
         type=float,
-        default=0.018,
+        default=0.02,
         help="Tiny pad beyond Italy land for OSM fringe only (~2km; keep sea unpainted)",
     )
     parser.add_argument("--cell-area", type=float, default=0.005)

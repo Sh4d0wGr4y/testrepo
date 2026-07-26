@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.27",
-  "packagedAt": "2026-07-26T19:52:49.000Z",
-  "notes": "V3.3.27: Italian zones fill land only — no open-sea paint; tiny OSM coast pad."
+  "appVersion": "3.3.28",
+  "packagedAt": "2026-07-26T19:57:41.000Z",
+  "notes": "V3.3.28: clip IT zones to real coastline (Natural Earth) — no sea blobs."
 }
