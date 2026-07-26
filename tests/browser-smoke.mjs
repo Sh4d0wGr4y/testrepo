@@ -76,6 +76,19 @@ try {
 
   await page.screenshot({ path: path.join(artifacts, 'hu-initial.png'), fullPage: true });
   await shot('DE', 'de-map.png');
+
+  // DE betöltéskor teljes ország (ne az első csoport)
+  const deActiveOnLoad = await page.locator('.range-button.is-active').count();
+  if (deActiveOnLoad !== 0) throw new Error('DE betöltéskor aktív csoportszűrő volt (teljes országnak kellene lennie)');
+  const deVisiblePaths = await page.evaluate(() => {
+    return [...document.querySelectorAll('.leaflet-overlay-pane path')].filter((p) => {
+      const fill = p.getAttribute('fill-opacity') || p.style.fillOpacity || '1';
+      return Number(fill) > 0.05;
+    }).length;
+  });
+  if (deVisiblePaths < 80) throw new Error(`DE teljes ország nézetben túl kevés látható zóna: ${deVisiblePaths}`);
+  console.log('OK: DE teljes ország alapnézet', deVisiblePaths);
+
   await shot('IT', 'it-map.png');
   await shot('HU', 'hu-map.png');
 
@@ -86,7 +99,7 @@ try {
   await page.waitForFunction(() => document.getElementById('mapLoading')?.hidden === true, null, { timeout: 30000 });
   console.log('OK: gyors országváltás');
 
-  // DE: Teljes ország után keresés aktiválja a csoportot
+  // DE: Teljes ország után keresés aktiválja a csoportot + helyjelölő
   await page.click('.country-flag-button[data-country="DE"]');
   await page.waitForFunction(() => document.getElementById('mapLoading')?.hidden === true, null, { timeout: 30000 });
   await page.click('#showAllButton');
@@ -100,7 +113,9 @@ try {
   if (activeLabel !== '01–10') throw new Error(`DE keresés nem aktiválta a 01–10 csoportot: ${activeLabel}`);
   const selectedDe = (await page.locator('.quick-button.is-active').textContent())?.trim();
   if (selectedDe !== '10') throw new Error(`DE keresés nem jelölte a 10-es zónát: ${selectedDe}`);
-  console.log('OK: Teljes ország utáni keresés aktivál csoportot');
+  const placePin = await page.locator('.place-map-pin').count();
+  if (placePin < 1) throw new Error('DE keresés után nincs helyjelölő a térképen');
+  console.log('OK: Teljes ország utáni keresés aktivál csoportot + pin');
 
   // HU keresés
   await page.click('.country-flag-button[data-country="HU"]');
@@ -110,7 +125,9 @@ try {
   await wait(1200);
   const selected = (await page.locator('.quick-button.is-active').textContent())?.trim();
   if (selected !== '8') throw new Error(`HU keresés nem jelölte a 8-as zónát: ${selected}`);
-  console.log('OK: HU keresés kijelölés');
+  const huPin = await page.locator('.place-map-pin').count();
+  if (huPin < 1) throw new Error('HU keresés után nincs helyjelölő');
+  console.log('OK: HU keresés kijelölés + pin');
 
   if (consoleErrors.length) {
     console.warn('Console errors:', consoleErrors.slice(0, 5));

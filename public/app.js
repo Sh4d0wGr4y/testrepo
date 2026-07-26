@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.1';
+const APP_VERSION = '3.3.2';
 
 const CONFIG = {
   HU: {
@@ -155,21 +155,49 @@ map.getPane('cityPane').style.pointerEvents = 'none';
 
 state.labels.addTo(map);
 state.cities.addTo(map);
+state.placeMarker = null;
+
+function clearPlaceMarker() {
+  if (state.placeMarker) {
+    map.removeLayer(state.placeMarker);
+    state.placeMarker = null;
+  }
+}
+
+function showPlaceMarker(lat, lon, label = '') {
+  clearPlaceMarker();
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+  const icon = L.divIcon({
+    className: 'place-marker-icon',
+    html: `<div class="place-map-pin" title="${escapeHtml(label)}"><span></span></div>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11]
+  });
+  state.placeMarker = L.marker([lat, lon], {
+    icon,
+    pane: 'cityPane',
+    interactive: false,
+    keyboard: false,
+    zIndexOffset: 6000
+  }).addTo(map);
+}
 
 function cleanDigits(value) { return String(value || '').replace(/\D/g, ''); }
 function prefixNumber(prefix) { const n = Number.parseInt(prefix, 10); return Number.isFinite(n) ? n : -1; }
 function colorFor(prefix, country = state.country) {
   const n = Math.max(0, prefixNumber(prefix));
   const digits = CONFIG[country]?.prefixDigits || 2;
-  let t;
   if (digits === 1) {
-    // HU 1–9: teljes színskála, minden zóna külön árnyalat
-    t = Math.min(1, Math.max(0, (n - 1) / 8));
-  } else {
-    t = Math.min(1, Math.max(0, n / 99));
+    // HU 1–9: egyenletes színskála (kék → piros)
+    const t = Math.min(1, Math.max(0, (n - 1) / 8));
+    const hue = 220 + (0 - 220) * t;
+    return `hsl(${hue} 78% 47%)`;
   }
-  const hue = 220 + (0 - 220) * t; // kék → zöld → sárga → piros
-  return `hsl(${hue} 78% 47%)`;
+  // DE/IT: szomszédos zónák legyenek jól megkülönböztethetők
+  const hue = (n * 137.508) % 360;
+  const sat = 70 + (n % 3) * 5;
+  const light = 42 + (n % 4) * 3;
+  return `hsl(${hue.toFixed(1)} ${sat}% ${light}%)`;
 }
 function inActiveRange(prefix) {
   if (!state.activeRange) return true;
@@ -184,18 +212,30 @@ function rangeForPrefix(country, prefix) {
 function polygonStyle(feature) {
   const prefix = String(feature.properties?.prefix ?? '');
   const selected = prefix === state.selectedPrefix;
-  const visible = inActiveRange(prefix);
+  const visible = inActiveRange(prefix) || selected;
   const fill = colorFor(prefix);
+  // Szűrt nézetben a nem ide tartozó zónák teljesen eltűnnek (nem csak halványak).
+  if (!visible) {
+    return {
+      renderer: svgRenderer,
+      color: '#000000',
+      weight: 0,
+      opacity: 0,
+      fillColor: fill,
+      fillOpacity: 0,
+      className: 'ftrans-zone-path is-hidden'
+    };
+  }
   return {
     renderer: svgRenderer,
-    color: selected ? '#ffffff' : visible ? '#2f4738' : '#a7b4ac',
-    weight: selected ? 3.2 : visible ? 1.15 : 0.65,
-    opacity: selected ? 1 : visible ? 0.85 : 0.35,
-    fillColor: selected ? fill : fill,
-    fillOpacity: selected ? 0.82 : (visible ? 0.62 : 0.12),
+    color: selected ? '#ffffff' : '#2f4738',
+    weight: selected ? 3.4 : 1.15,
+    opacity: 1,
+    fillColor: fill,
+    fillOpacity: selected ? 0.86 : 0.64,
     lineCap: 'round',
     lineJoin: 'round',
-    className: 'ftrans-zone-path'
+    className: selected ? 'ftrans-zone-path is-selected' : 'ftrans-zone-path'
   };
 }
 
@@ -275,11 +315,13 @@ function buildRangeButtons() {
     button.addEventListener('click', () => {
       state.activeRange = range;
       state.selectedPrefix = null;
+      clearPlaceMarker();
       hideResult();
       restyleMap();
       buildRangeButtons();
       buildQuickButtons();
       buildLabels();
+      fitActiveRange();
     });
     elements.rangeGrid.appendChild(button);
   }
@@ -645,6 +687,7 @@ function removeActiveLayer() {
   }
   state.labels.clearLayers();
   state.cities.clearLayers();
+  clearPlaceMarker();
 }
 
 async function loadCountry(nextCountry, options = {}) {
@@ -671,7 +714,7 @@ async function loadCountry(nextCountry, options = {}) {
     const nextGroups = new Map();
     const nextFeatures = new Map();
     state.country = nextCountry;
-    state.activeRange = getRanges(nextCountry)[0] || null;
+    state.activeRange = null; // induláskor teljes ország, ne az első csoport
     state.selectedPrefix = null;
     const newLayer = createGeoLayer(data, nextCountry, nextGroups, nextFeatures);
 
@@ -732,10 +775,13 @@ function updateLegend() {
   if (elements.legendHint) {
     elements.legendHint.textContent = hu
       ? 'Az 1–9 zónák saját színt kapnak.'
-      : 'A szín a zónaszám növekedésével változik.';
+      : 'Minden zóna saját színt kap a könnyebb megkülönböztetéshez.';
   }
   if (elements.legendCityRow) elements.legendCityRow.hidden = !state.showCities;
-  if (elements.mapLegend) elements.mapLegend.hidden = false;
+  if (elements.mapLegend) {
+    elements.mapLegend.hidden = false;
+    elements.mapLegend.dataset.scale = hu ? 'hu' : 'multi';
+  }
 }
 
 function syncCountryFlags() {
@@ -790,6 +836,27 @@ function fitFeature(feature, options = {}) {
   return true;
 }
 
+function fitActiveRange() {
+  if (!state.activeRange || !state.features.size) {
+    fitCountry(false);
+    return;
+  }
+  const layers = [];
+  for (const [prefix, feature] of state.features.entries()) {
+    if (!inActiveRange(prefix)) continue;
+    const bounds = boundsForFeature(feature);
+    if (bounds?.isValid()) layers.push(bounds);
+  }
+  if (!layers.length) {
+    fitCountry(false);
+    return;
+  }
+  let merged = layers[0];
+  for (let i = 1; i < layers.length; i += 1) merged = merged.extend(layers[i]);
+  map.fitBounds(merged, { padding: [28, 28], animate: false, maxZoom: state.country === 'HU' ? 8 : 8 });
+  scheduleMapRefresh();
+}
+
 function fitCountry(animate = false) {
   if (state.layer?.getBounds().isValid()) {
     map.fitBounds(state.layer.getBounds(), { padding: [18, 18], animate: false, maxZoom: CONFIG[state.country].zoom + 1 });
@@ -811,8 +878,9 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
   }
   state.selectedPrefix = prefix;
   const range = rangeForPrefix(state.country, prefix);
-  // Keresésnél (és ha a felhasználó Teljes ország / Összes nézetben van) aktiváljuk a csoportot.
-  if (range && (options.activateRange || !state.activeRange || !inActiveRange(prefix))) {
+  // Csoportot csak keresésnél, vagy ha már szűrt nézetben vagyunk és a zóna kívül esik.
+  // Teljes országnézetben a kattintás csak kijelöl, nem kapcsol be szűrőt.
+  if (range && (options.activateRange || (state.activeRange && !inActiveRange(prefix)))) {
     state.activeRange = range;
   }
   restyleMap();
@@ -842,6 +910,7 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
 
 function clearSelection() {
   state.selectedPrefix = null;
+  clearPlaceMarker();
   hideResult();
   restyleMap();
   buildQuickButtons();
@@ -906,6 +975,11 @@ async function executeSearch(rawValue, options = {}) {
   } else {
     showResult(result);
     if (lookup.verified || lookup.notFound) state.lastSuccessfulResult = result;
+  }
+  if (lookup.verified && Number.isFinite(lookup.latitude) && Number.isFinite(lookup.longitude)) {
+    showPlaceMarker(lookup.latitude, lookup.longitude, result.place || value);
+    map.setView([lookup.latitude, lookup.longitude], state.country === 'HU' ? 10 : 11, { animate: false });
+    scheduleMapRefresh();
   }
   setInputMessage(lookup.networkError ? 'A zóna megjelent, de a hálózati ellenőrzés nem sikerült.' : 'A találat megjelent a térképen.', Boolean(lookup.networkError));
   if (!options.fromHistory) addHistory({ country: state.country, postcode: value, place: result.place, prefix });
@@ -1010,9 +1084,12 @@ function setTheme(theme) {
 async function loadManifest() {
   try {
     state.manifest = await fetchJson('/data/processed/manifest.json');
-    const date = new Date(state.manifest.generatedAt || state.manifest.packagedAt);
-    if (Number.isFinite(date.getTime())) {
-      elements.dataStatus.textContent = `Adatcsomag: ${date.toLocaleDateString('hu-HU')} · v${APP_VERSION}`;
+    // Ne írja felül a betöltött zónaszámot; csak akkor jelenjen meg, ha még nincs státusz.
+    if (!elements.dataStatus.textContent || elements.dataStatus.textContent.includes('betöltése')) {
+      const date = new Date(state.manifest.generatedAt || state.manifest.packagedAt);
+      if (Number.isFinite(date.getTime())) {
+        elements.dataStatus.textContent = `Adatcsomag: ${date.toLocaleDateString('hu-HU')} · v${APP_VERSION}`;
+      }
     }
   } catch {
     /* A térkép ettől még betölthető. */
@@ -1022,6 +1099,7 @@ async function loadManifest() {
 function clearAllFilters() {
   state.activeRange = null;
   state.selectedPrefix = null;
+  clearPlaceMarker();
   elements.searchInput.value = '';
   setInputMessage();
   hideResult();
@@ -1055,6 +1133,7 @@ function bindEvents() {
   elements.showAllButton.addEventListener('click', () => {
     state.activeRange = null;
     state.selectedPrefix = null;
+    clearPlaceMarker();
     hideResult();
     restyleMap();
     buildRangeButtons();
