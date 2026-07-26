@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.4';
+const APP_VERSION = '3.3.5';
 
 const CONFIG = {
   HU: {
@@ -1054,9 +1054,72 @@ async function executeSearch(rawValue, options = {}) {
   if (!options.fromHistory) addHistory({ country: state.country, postcode: value, place: result.place, prefix });
 }
 
+function zoneMapCenter(prefix) {
+  const feature = state.features.get(prefix);
+  if (!feature) return null;
+  const point = featureLabelPoint(feature);
+  if (Array.isArray(point) && point.length === 2 && Number.isFinite(point[0]) && Number.isFinite(point[1])) {
+    return { latitude: point[1], longitude: point[0] };
+  }
+  const bounds = fullFeatureBounds(feature) || boundsForFeature(feature);
+  if (bounds?.isValid()) {
+    const c = bounds.getCenter();
+    return { latitude: c.lat, longitude: c.lng };
+  }
+  return null;
+}
+
+function mapsZoomForResult(result) {
+  if (result.postcode && result.verified) return state.country === 'HU' ? 13 : 14;
+  const feature = result.prefix ? state.features.get(result.prefix) : null;
+  const bounds = feature ? (fullFeatureBounds(feature) || boundsForFeature(feature)) : null;
+  if (bounds?.isValid()) {
+    const span = Math.max(
+      Math.abs(bounds.getNorth() - bounds.getSouth()),
+      Math.abs(bounds.getEast() - bounds.getWest())
+    );
+    if (span > 2.5) return 7;
+    if (span > 1.4) return 8;
+    if (span > 0.8) return 9;
+    if (span > 0.4) return 10;
+    return 11;
+  }
+  return state.country === 'HU' ? 9 : 8;
+}
+
+function googleMapsUrl(result) {
+  const cfg = CONFIG[state.country];
+  let lat = Number(result.latitude);
+  let lon = Number(result.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    const center = result.prefix ? zoneMapCenter(String(result.prefix)) : null;
+    if (center) {
+      lat = center.latitude;
+      lon = center.longitude;
+    }
+  }
+  if (Number.isFinite(lat) && Number.isFinite(lon)) {
+    const zoom = mapsZoomForResult(result);
+    // @lat,lng,zoom — a kijelölt zóna / település környékét nyitja, nem az egész országot
+    return `https://www.google.com/maps/@${lat.toFixed(5)},${lon.toFixed(5)},${zoom}z`;
+  }
+  const query = [result.postcode, result.place, result.prefix ? `${result.prefix}-es postai zóna` : '', cfg.name]
+    .filter(Boolean)
+    .join(' ');
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query || cfg.name)}`;
+}
+
 function showResult(result) {
   state.currentResult = result;
   const cfg = CONFIG[state.country];
+  // Zónakattintásnál töltsük fel a középpontot a Maps linkhez.
+  if ((!Number.isFinite(result.latitude) || !Number.isFinite(result.longitude)) && result.prefix) {
+    const center = zoneMapCenter(String(result.prefix));
+    if (center) {
+      result = { ...result, latitude: center.latitude, longitude: center.longitude };
+      state.currentResult = result;
+    }
+  }
   elements.resultCard.hidden = false;
   elements.resultBadge.textContent = result.verified ? 'Ellenőrzött találat' : 'Kiválasztott zóna';
   elements.resultCode.textContent = result.postcode || result.prefix;
@@ -1066,10 +1129,10 @@ function showResult(result) {
   elements.detailPlace.textContent = result.place || '—';
   elements.detailRegion.textContent = result.region || '—';
   elements.resultMessage.textContent = result.message || '';
-  const mapQuery = result.latitude && result.longitude
-    ? `${result.latitude},${result.longitude}`
-    : [result.postcode, result.place, cfg.name].filter(Boolean).join(' ');
-  elements.mapsLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
+  elements.mapsLink.href = googleMapsUrl(result);
+  elements.mapsLink.title = Number.isFinite(result.latitude)
+    ? 'Megnyitás Google Mapsen a kijelölt területnél'
+    : 'Megnyitás Google Mapsen';
 }
 function hideResult() {
   elements.resultCard.hidden = true;

@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.4",
+  "appVersion": "3.3.5",
   "packagedAt": "2026-07-26T09:30:00.000Z",
-  "notes": "V3.3.4: IT/DE misassigned scraps reassigned to nearest correct zone (Komló-style fix)."
+  "notes": "V3.3.5: Google Maps link opens selected zone center, not whole country."
 }
