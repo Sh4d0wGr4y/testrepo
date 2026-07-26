@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.9",
+  "appVersion": "3.3.10",
   "packagedAt": "2026-07-26T09:30:00.000Z",
-  "notes": "V3.3.9: toggle/clear zone selection; Google Maps zone uses map_action=map (no pin)."
+  "notes": "V3.3.10: remove unused copy button from result card."
 }

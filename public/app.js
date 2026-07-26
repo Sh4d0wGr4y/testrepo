@@ -118,7 +118,7 @@ const elements = {
   retryButton: $('retryButton'),
   resultCard: $('resultCard'), resultCloseButton: $('resultCloseButton'), resultBadge: $('resultBadge'), resultCode: $('resultCode'),
   resultPlace: $('resultPlace'), resultRegion: $('resultRegion'), detailPostcode: $('detailPostcode'), detailPlace: $('detailPlace'),
-  detailRegion: $('detailRegion'), resultMessage: $('resultMessage'), copyButton: $('copyButton'), mapsLink: $('mapsLink'),
+  detailRegion: $('detailRegion'), resultMessage: $('resultMessage'), mapsLink: $('mapsLink'),
   fitCountryButton: $('fitCountryButton'), clearSelectionButton: $('clearSelectionButton'), fullscreenButton: $('fullscreenButton'),
   themeButton: $('themeButton'), infoButton: $('infoButton'), infoDialog: $('infoDialog'), toast: $('toast'), dataStatus: $('dataStatus'),
   systemStatus: $('systemStatus'), mapLegend: $('mapLegend'), legendMin: $('legendMin'), legendMax: $('legendMax'),
@@ -1195,23 +1195,6 @@ function hideResult() {
   }
 }
 
-async function copyResult() {
-  if (!state.currentResult) return;
-  const r = state.currentResult;
-  const text = [
-    r.postcode ? `${r.postcode}${r.place ? ` – ${r.place}` : ''}` : `${r.prefix}-es postai zóna`,
-    `Zóna: ${r.prefix}`,
-    r.region ? `Régió: ${r.region}` : '',
-    CONFIG[state.country].name
-  ].filter(Boolean).join('\n');
-  try {
-    await navigator.clipboard.writeText(text);
-    toast('A találatot a vágólapra másoltam.');
-  } catch {
-    toast('A másolás nem sikerült.');
-  }
-}
-
 function readHistory() {
   try {
     const value = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
@@ -1347,7 +1330,6 @@ function bindEvents() {
     // A × ne csak a kártyát rejtse el — oldja fel a zónakijelölést is.
     clearSelection();
   });
-  elements.copyButton.addEventListener('click', copyResult);
   elements.clearHistoryButton.addEventListener('click', () => {
     state.history = [];
     saveHistory();
