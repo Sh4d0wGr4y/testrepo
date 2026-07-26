@@ -41,7 +41,7 @@ def polygon_parts(geom):
 
 
 def clean_feature_parts(geom, min_keep_ratio: float = 0.04, max_gap_deg: float = 2.5):
-    """Keep significant parts near the main mass; drop tiny distant scraps."""
+    """Keep parts for later reassignment; only drop absurdly distant noise."""
     parts = polygon_parts(geom)
     if not parts:
         return None
@@ -53,22 +53,21 @@ def clean_feature_parts(geom, min_keep_ratio: float = 0.04, max_gap_deg: float =
             gap = main.distance(part)
         except Exception:
             gap = 999.0
-        # Nagy, de a fő tömegtől távoli darab = tipikus névütközéses hibás hozzárendelés (pl. Kömlő→Komló).
-        if gap > 1.2:
+        # Csak a teljesen abszurd távoli zajt dobjuk el itt; a többit a reassign lépés kezeli.
+        if gap > 3.5 and part.area < main.area * 0.02:
             continue
-        if part.area >= main.area * min_keep_ratio:
+        if part.area >= main.area * min_keep_ratio or gap <= max_gap_deg:
             kept.append(part)
             continue
-        if gap <= max_gap_deg:
+        if gap <= 3.5:
             kept.append(part)
-            continue
     if len(kept) == 1:
         return kept[0]
     return unary_union(kept)
 
 
 def drop_parts_inside_other_mains(features: list[dict]) -> list[dict]:
-    """Remove or reassign polygon scraps that belong inside another zone's main body."""
+    """Reassign or drop scraps that belong with another zone (Kömlő/IT-style errors)."""
     mains: dict[str, object] = {}
     cleaned_parts: dict[str, list] = {}
     props_by: dict[str, dict] = {}
@@ -85,9 +84,10 @@ def drop_parts_inside_other_mains(features: list[dict]) -> list[dict]:
         cleaned_parts[prefix] = parts
 
     other_mains = list(mains.items())
-    # Collect reassignments: scrap → host prefix
     extras: dict[str, list] = {p: [] for p in cleaned_parts}
     kept_parts: dict[str, list] = {p: [] for p in cleaned_parts}
+    reassigned = 0
+    dropped = 0
 
     for prefix, parts in cleaned_parts.items():
         own_main = parts[0]
@@ -97,38 +97,61 @@ def drop_parts_inside_other_mains(features: list[dict]) -> list[dict]:
                 continue
 
             pt = part.representative_point()
-            host = None
-            host_overlap = 0.0
+            try:
+                d_own = own_main.distance(pt)
+            except Exception:
+                d_own = 999.0
+
+            best_host = None
+            best_overlap = 0.0
+            best_dist = 999.0
+            best_contains = False
+
             for other_prefix, other_main in other_mains:
                 if other_prefix == prefix:
                     continue
                 try:
-                    if other_main.contains(pt) or other_main.covers(pt) or other_main.intersects(part):
+                    contains = other_main.contains(pt) or other_main.covers(pt)
+                    dist = other_main.distance(pt)
+                    overlap = 0.0
+                    if other_main.intersects(part):
                         try:
                             overlap = other_main.intersection(part).area
                         except Exception:
-                            overlap = part.area if other_main.contains(pt) else 0.0
-                        # Prefer host that covers most of the scrap, and only if scrap is smaller.
-                        if part.area < other_main.area * 0.35 and overlap >= host_overlap:
-                            if overlap > part.area * 0.2 or other_main.contains(pt) or other_main.covers(pt):
-                                host = other_prefix
-                                host_overlap = overlap
+                            overlap = part.area if contains else 0.0
                 except Exception:
                     continue
 
-            far_from_own = False
-            try:
-                far_from_own = own_main.distance(part) > 1.2
-            except Exception:
-                far_from_own = False
+                # Prefer containing / high-overlap hosts; else nearest main.
+                if contains or overlap > best_overlap:
+                    if part.area < other_main.area * 0.4:
+                        best_host = other_prefix
+                        best_overlap = max(overlap, best_overlap)
+                        best_dist = dist
+                        best_contains = contains or best_contains
+                elif best_host is None or (not best_contains and best_overlap <= 0 and dist < best_dist):
+                    if part.area < other_main.area * 0.4:
+                        best_host = other_prefix
+                        best_dist = dist
 
-            if host and (host_overlap > 0 or far_from_own):
-                # Reassign mis-attached scrap (e.g. Kömlő stuck on Komló/zone 7) to the host zone.
-                extras.setdefault(host, []).append(part)
+            ov_ratio = (best_overlap / part.area) if part.area and best_overlap else 0.0
+            # Közelebb van egy másik zónához, mint a saját fő tömegéhez → átsorolás.
+            closer_to_other = best_host is not None and best_dist + 0.12 < d_own and d_own >= 0.22
+            nested = best_contains or ov_ratio >= 0.25
+            far_orphan = d_own > 0.85 and part.area < own_main.area * 0.12
+
+            if best_host and (nested or closer_to_other):
+                extras.setdefault(best_host, []).append(part)
+                reassigned += 1
                 continue
 
-            if far_from_own and part.area < own_main.area * 0.08:
-                # Distant tiny scrap with no clear host — drop.
+            if far_orphan and (best_host is None or best_dist > 0.35):
+                dropped += 1
+                continue
+
+            if far_orphan and best_host is not None and best_dist <= 0.35:
+                extras.setdefault(best_host, []).append(part)
+                reassigned += 1
                 continue
 
             kept_parts[prefix].append(part)
@@ -152,6 +175,7 @@ def drop_parts_inside_other_mains(features: list[dict]) -> list[dict]:
                 "geometry": mapping(geom),
             }
         )
+    print(f"  reassigned={reassigned} dropped={dropped}")
     return result
 
 
