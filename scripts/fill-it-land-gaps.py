@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Fill uncolored Italian land on postal-zone polygons.
 
-Partitions Italy land (+ coastal pad for OSM tile mismatch) to the nearest
-*original* zone so Calabria stays 88/89 and Sicily stays 90–98. Strips interior
-holes (overlap artifacts) that otherwise show up as white gaps on the map.
+Partitions Italy land (+ a tiny coastal pad for OSM tile mismatch) to the
+nearest *original* zone so Calabria stays 88/89 and Sicily stays 90–98.
+Clips hard to land so open sea is not painted. Strips interior holes.
 
 Do not re-run clean-zone-geometries.py on IT afterward without this script.
 """
@@ -107,8 +107,8 @@ def main() -> None:
     parser.add_argument(
         "--coast-buffer",
         type=float,
-        default=0.12,
-        help="Pad beyond Italy land so OSM coastline land is painted",
+        default=0.018,
+        help="Tiny pad beyond Italy land for OSM fringe only (~2km; keep sea unpainted)",
     )
     parser.add_argument("--cell-area", type=float, default=0.005)
     args = parser.parse_args()
@@ -161,6 +161,9 @@ def main() -> None:
                 else:
                     geoms[i] = as_valid(geoms[i].difference(part))
 
+    # Hard clip so open sea stays unpainted.
+    geoms = [as_valid(g.intersection(target)) for g in geoms]
+
     out_feats = []
     for f, g in zip(feats, geoms):
         g = strip_holes(g)
@@ -168,6 +171,8 @@ def main() -> None:
             continue
         s = as_valid(g.simplify(args.simplify, preserve_topology=True)) or g
         s = strip_holes(s) or g
+        s = as_valid(s.intersection(target)) or s
+        s = strip_holes(s)
         parts = [p for p in explode(s) if p.area >= 1e-5]
         if not parts:
             continue
@@ -179,7 +184,11 @@ def main() -> None:
         out_feats.append({"type": "Feature", "properties": props, "geometry": mapping(s)})
 
     final = unary_union([shape(f["geometry"]) for f in out_feats])
-    print(f"final land cover={final.intersection(land).area / land.area:.6f} features={len(out_feats)}")
+    sea = final.difference(land)
+    print(
+        f"final land cover={final.intersection(land).area / land.area:.6f} "
+        f"sea_overpaint={0 if sea is None else sea.area:.6f} features={len(out_feats)}"
+    )
     OUT.write_text(
         json.dumps({"type": "FeatureCollection", "features": out_feats}, ensure_ascii=False, separators=(",", ":"))
     )

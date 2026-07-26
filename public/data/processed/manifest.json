@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.26",
-  "packagedAt": "2026-07-26T16:10:00.000Z",
-  "notes": "V3.3.26: fill Italian land gaps (Calabria tip, Sicily, coasts) + canvas zone renderer."
+  "appVersion": "3.3.27",
+  "packagedAt": "2026-07-26T19:52:49.000Z",
+  "notes": "V3.3.27: Italian zones fill land only — no open-sea paint; tiny OSM coast pad."
 }
