@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Fill uncolored Italian land on postal-zone polygons.
+"""Fill Italian postal-zone polygons to the national border — not beyond.
 
-Partitions Italy land (+ a tiny coastal pad for OSM tile mismatch) to the
-nearest *original* zone so Calabria stays 88/89 and Sicily stays 90–98.
-Clips hard to land so open sea is not painted. Strips interior holes.
+Uses Natural Earth admin-0 Italy as a hard political clip (no France / CH /
+AT / SI spill) and NE land for coastline. Gap cells are assigned to the
+nearest original zone. Interior holes are stripped.
 
 Do not re-run clean-zone-geometries.py on IT afterward without this script.
 """
@@ -16,13 +16,14 @@ import math
 import subprocess
 from pathlib import Path
 
-from shapely.geometry import LinearRing, MultiPolygon, Polygon, box, mapping, shape
+from shapely.geometry import LinearRing, MultiPolygon, Point, Polygon, box, mapping, shape
 from shapely.ops import unary_union
 from shapely.validation import make_valid
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "public" / "data" / "processed" / "it_prefix2.geojson"
 LAND = ROOT / "scripts" / "data" / "italy_land.geojson"
+ADMIN = ROOT / "scripts" / "data" / "italy_admin.geojson"
 DEFAULT_BASE_REF = "bffdd06:public/data/processed/it_prefix2.geojson"
 
 
@@ -72,7 +73,6 @@ def subdivide(poly: Polygon, max_area: float) -> list[Polygon]:
 
 
 def strip_holes(geom):
-    """Choropleth zones should be solid — large interior rings read as white gaps."""
     g = as_valid(geom)
     if g is None:
         return None
@@ -103,20 +103,25 @@ def load_base(base: str) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", default=DEFAULT_BASE_REF)
-    parser.add_argument("--simplify", type=float, default=0.0009)
+    parser.add_argument("--simplify", type=float, default=0.0007)
     parser.add_argument(
         "--coast-buffer",
         type=float,
-        default=0.006,
-        help="Tiny pad beyond Italy land for OSM fringe only (~2km; keep sea unpainted)",
+        default=0.004,
+        help="Tiny pad on land inside admin only (OSM fringe)",
     )
-    parser.add_argument("--cell-area", type=float, default=0.005)
+    parser.add_argument("--cell-area", type=float, default=0.004)
     args = parser.parse_args()
 
     land = as_valid(shape(json.loads(LAND.read_text())["features"][0]["geometry"]))
-    if land is None:
-        raise SystemExit(f"invalid land outline: {LAND}")
-    target = land.buffer(args.coast_buffer)
+    admin = as_valid(shape(json.loads(ADMIN.read_text())["features"][0]["geometry"]))
+    if land is None or admin is None:
+        raise SystemExit("invalid italy_land / italy_admin outline")
+
+    # Fill target stays inside the political border.
+    target = as_valid(land.buffer(args.coast_buffer).intersection(admin))
+    if target is None:
+        raise SystemExit("empty fill target")
 
     data = load_base(args.base)
     feats = data["features"]
@@ -125,14 +130,18 @@ def main() -> None:
         g = as_valid(shape(f["geometry"]))
         if g is None:
             raise SystemExit(f"empty geometry for {f.get('properties')}")
-        near = as_valid(g.intersection(land.buffer(0.2)))
+        near = as_valid(g.intersection(admin.buffer(0.05)))
         orig.append(near if near is not None and not near.is_empty else g)
 
-    geoms = [as_valid(g.intersection(target)) or g for g in orig]
-    allu = unary_union(geoms)
+    geoms = []
+    for g in orig:
+        clipped = as_valid(g.intersection(target))
+        geoms.append(clipped if clipped is not None and not clipped.is_empty else as_valid(g.intersection(admin)))
+
+    allu = unary_union([g for g in geoms if g is not None and not g.is_empty])
     gaps = as_valid(target.difference(allu))
     print(
-        f"initial land cover={allu.intersection(land).area / land.area:.6f} "
+        f"initial admin cover={allu.intersection(admin).area / admin.area:.6f} "
         f"gap_area={0 if gaps is None else gaps.area:.6f}"
     )
 
@@ -149,7 +158,7 @@ def main() -> None:
     for i in range(len(geoms)):
         for j in range(i + 1, len(geoms)):
             a, b = geoms[i], geoms[j]
-            if a is None or b is None:
+            if a is None or b is None or a.is_empty or b.is_empty:
                 continue
             inter = as_valid(a.intersection(b))
             if inter is None or inter.is_empty or inter.area < 1e-12:
@@ -161,8 +170,8 @@ def main() -> None:
                 else:
                     geoms[i] = as_valid(geoms[i].difference(part))
 
-    # Hard clip so open sea stays unpainted.
-    geoms = [as_valid(g.intersection(target)) for g in geoms]
+    # Hard political clip — never paint neighboring countries.
+    geoms = [as_valid(g.intersection(admin)) for g in geoms]
 
     out_feats = []
     for f, g in zip(feats, geoms):
@@ -171,23 +180,26 @@ def main() -> None:
             continue
         s = as_valid(g.simplify(args.simplify, preserve_topology=True)) or g
         s = strip_holes(s) or g
-        s = as_valid(s.intersection(target)) or s
+        s = as_valid(s.intersection(admin))
         s = strip_holes(s)
         parts = [p for p in explode(s) if p.area >= 1e-5]
         if not parts:
             continue
         s = parts[0] if len(parts) == 1 else MultiPolygon(parts)
-        s = strip_holes(s)
+        s = strip_holes(as_valid(s.intersection(admin)))
+        if s is None or s.is_empty:
+            continue
         cy = s.centroid.y if not s.is_empty else 42
         props = dict(f["properties"])
         props["area_km2"] = round(s.area * 111 * 111 * math.cos(math.radians(cy)), 2)
         out_feats.append({"type": "Feature", "properties": props, "geometry": mapping(s)})
 
     final = unary_union([shape(f["geometry"]) for f in out_feats])
-    sea = final.difference(land)
+    outside = final.difference(admin)
     print(
-        f"final land cover={final.intersection(land).area / land.area:.6f} "
-        f"sea_overpaint={0 if sea is None else sea.area:.6f} features={len(out_feats)}"
+        f"final admin cover={final.intersection(admin).area / admin.area:.6f} "
+        f"outside_admin={0 if outside.is_empty else outside.area:.8f} "
+        f"features={len(out_feats)}"
     )
     OUT.write_text(
         json.dumps({"type": "FeatureCollection", "features": out_feats}, ensure_ascii=False, separators=(",", ":"))
