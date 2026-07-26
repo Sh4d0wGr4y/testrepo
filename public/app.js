@@ -231,7 +231,8 @@ function setSingleSelection(prefix) {
   state.selectedPrefixes = new Set(prefix == null || prefix === '' ? [] : [String(prefix)]);
 }
 
-const svgRenderer = L.svg({ padding: 0.65 });
+const svgRenderer = L.svg({ padding: 1.0 });
+const zoneRenderer = L.canvas({ padding: 1.0 });
 const map = L.map('map', {
   renderer: svgRenderer,
   zoomControl: true,
@@ -392,7 +393,7 @@ function polygonStyle(feature) {
   const fill = zoneFillColor(prefix);
   if (!visible) {
     return {
-      renderer: svgRenderer,
+      renderer: zoneRenderer,
       color: fill,
       weight: 0,
       opacity: 0,
@@ -404,7 +405,7 @@ function polygonStyle(feature) {
   }
   const baseFill = state.showZoneColors ? (selected ? 0.88 : (hasSelection ? 0.18 : 0.58)) : (selected ? 0.42 : (hasSelection ? 0.06 : 0.12));
   return {
-    renderer: svgRenderer,
+    renderer: zoneRenderer,
     color: selected ? '#0f7a38' : (state.showZoneColors ? shadeColor(fill, -0.28) : 'rgba(40, 55, 48, 0.5)'),
     weight: selected ? 3.2 : (hasSelection ? 0.75 : 1.15),
     opacity: selected ? 1 : (hasSelection ? 0.4 : 0.82),
@@ -886,9 +887,10 @@ function createGeoLayer(data, nextCountry, nextGroups, nextFeatures) {
   }
 
   return L.geoJSON({ type: 'FeatureCollection', features: mergedFeatures }, {
-    renderer: svgRenderer,
+    renderer: zoneRenderer,
     style: polygonStyle,
-    smoothFactor: 0.6,
+    // Keep rings intact: smoothFactor can collapse complex IT polygons to empty SVG paths (M0 0).
+    smoothFactor: 0,
     onEachFeature(feature, polygon) {
       const prefix = String(feature.properties?.prefix ?? '');
       if (!nextGroups.has(prefix)) nextGroups.set(prefix, []);

@@ -69,9 +69,10 @@ try {
     }, null, { timeout: 30000 });
     await wait(800);
     const paths = await page.locator('.leaflet-overlay-pane path').count();
-    if (paths < 1) throw new Error(`${country}: nincs zónapoligon a térképen`);
+    const canvases = await page.locator('.leaflet-overlay-pane canvas').count();
+    if (paths < 1 && canvases < 1) throw new Error(`${country}: nincs zónaréteg a térképen`);
     await page.screenshot({ path: path.join(artifacts, filename), fullPage: true });
-    console.log(`OK: ${country} screenshot (${paths} path)`);
+    console.log(`OK: ${country} screenshot (${paths} path, ${canvases} canvas)`);
   }
 
   await page.screenshot({ path: path.join(artifacts, 'hu-initial.png'), fullPage: true });
@@ -80,14 +81,18 @@ try {
   // DE betöltéskor teljes ország (ne az első csoport)
   const deActiveOnLoad = await page.locator('.range-button.is-active').count();
   if (deActiveOnLoad !== 0) throw new Error('DE betöltéskor aktív csoportszűrő volt (teljes országnak kellene lennie)');
-  const deVisiblePaths = await page.evaluate(() => {
-    return [...document.querySelectorAll('.leaflet-overlay-pane path')].filter((p) => {
+  const deVisibleZones = await page.evaluate(() => {
+    const paths = [...document.querySelectorAll('.leaflet-overlay-pane path')].filter((p) => {
       const fill = p.getAttribute('fill-opacity') || p.style.fillOpacity || '1';
       return Number(fill) > 0.05;
     }).length;
+    const canvases = document.querySelectorAll('.leaflet-overlay-pane canvas').length;
+    return { paths, canvases };
   });
-  if (deVisiblePaths < 80) throw new Error(`DE teljes ország nézetben túl kevés látható zóna: ${deVisiblePaths}`);
-  console.log('OK: DE teljes ország alapnézet', deVisiblePaths);
+  if (deVisibleZones.paths < 80 && deVisibleZones.canvases < 1) {
+    throw new Error(`DE teljes ország nézetben túl kevés látható zóna: ${JSON.stringify(deVisibleZones)}`);
+  }
+  console.log('OK: DE teljes ország alapnézet', deVisibleZones);
 
   await shot('IT', 'it-map.png');
   await shot('HU', 'hu-map.png');

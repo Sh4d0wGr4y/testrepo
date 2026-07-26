@@ -226,6 +226,6 @@
     }
   },
   "appVersion": "3.3.26",
-  "packagedAt": "2026-07-26T15:27:34.000Z",
-  "notes": "V3.3.26: fill Italian land gaps (Calabria tip, Sicily, inland holes) against Italy outline."
+  "packagedAt": "2026-07-26T16:10:00.000Z",
+  "notes": "V3.3.26: fill Italian land gaps (Calabria tip, Sicily, coasts) + canvas zone renderer."
 }
