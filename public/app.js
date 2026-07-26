@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.19';
+const APP_VERSION = '3.3.20';
 
 const CONFIG = {
   HU: {
@@ -481,17 +481,19 @@ function buildRangeButtons() {
     const button = document.createElement('button');
     button.type = 'button';
     const active = state.activeRange?.min === range.min;
-    button.className = `range-button${active ? ' is-active' : ''}${state.showRangeColors ? ' has-swatch' : ''}`;
-    const mid = Math.round((range.min + range.max) / 2);
-    const swatchPrefix = String(mid).padStart(digits, '0');
-    const swatch = colorFor(swatchPrefix);
-    if (state.showRangeColors) {
+    // Színes mód: csak a kijelölt zónacsoport kap színt.
+    const showColor = state.showRangeColors && active;
+    button.className = `range-button${active ? ' is-active' : ''}${showColor ? ' has-swatch' : ''}`;
+    if (showColor) {
+      const mid = Math.round((range.min + range.max) / 2);
+      const swatchPrefix = String(mid).padStart(digits, '0');
+      const swatch = colorFor(swatchPrefix);
       button.style.setProperty('--swatch', swatch);
       button.style.setProperty('--swatch-soft', shadeColor(swatch, 0.42));
+      button.innerHTML = `<i class="btn-swatch" aria-hidden="true"></i><span>${range.label}</span>`;
+    } else {
+      button.textContent = range.label;
     }
-    button.innerHTML = state.showRangeColors
-      ? `<i class="btn-swatch" aria-hidden="true"></i><span>${range.label}</span>`
-      : range.label;
     button.setAttribute('aria-pressed', String(active));
     button.addEventListener('click', () => {
       state.activeRange = range;
@@ -516,8 +518,11 @@ function buildQuickButtons() {
   for (const prefix of filtered) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = `quick-button${isSelectedPrefix(prefix) ? ' is-active' : ''}${state.showQuickColors ? ' has-swatch' : ''}`;
-    if (state.showQuickColors) {
+    const selected = isSelectedPrefix(prefix);
+    // Színes mód: csak a kijelölt zónaszám(ok) kapnak színt.
+    const showColor = state.showQuickColors && selected;
+    button.className = `quick-button${selected ? ' is-active' : ''}${showColor ? ' has-swatch' : ''}`;
+    if (showColor) {
       const swatch = colorFor(prefix);
       button.style.setProperty('--swatch', swatch);
       button.style.setProperty('--swatch-soft', shadeColor(swatch, 0.42));
@@ -525,7 +530,7 @@ function buildQuickButtons() {
     } else {
       button.textContent = prefix;
     }
-    button.setAttribute('aria-pressed', String(isSelectedPrefix(prefix)));
+    button.setAttribute('aria-pressed', String(selected));
     button.addEventListener('click', (event) => selectPrefix(prefix, true, '', { additive: event.ctrlKey || event.metaKey }));
     elements.quickGrid.appendChild(button);
   }
