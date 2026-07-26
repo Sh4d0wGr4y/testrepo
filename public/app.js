@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.15';
+const APP_VERSION = '3.3.16';
 
 const CONFIG = {
   HU: {
@@ -211,7 +211,8 @@ const state = {
   showButtonColors: readShowButtonColors(),
   currentResult: null, lastSuccessfulResult: null,
   dataCache: new Map(), loadToken: 0, controller: null,
-  history: readHistory(), manifest: null, lastLoadError: null
+  history: readHistory(), manifest: null, lastLoadError: null,
+  flightToken: 0
 };
 
 function isSelectedPrefix(prefix) {
@@ -233,19 +234,22 @@ const map = L.map('map', {
   renderer: svgRenderer,
   zoomControl: true,
   preferCanvas: false,
-  fadeAnimation: false,
+  fadeAnimation: true,
   zoomAnimation: true,
-  markerZoomAnimation: false,
+  markerZoomAnimation: true,
+  zoomAnimationThreshold: 8,
   inertia: true,
+  inertiaDeceleration: 2800,
+  easeLinearity: 0.2,
   minZoom: 3,
   worldCopyJump: false
 }).setView(CONFIG.HU.center, CONFIG.HU.zoom);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 18,
-  updateWhenIdle: false,
+  updateWhenIdle: true,
   updateWhenZooming: false,
-  keepBuffer: 5,
+  keepBuffer: 6,
   crossOrigin: true,
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
@@ -963,16 +967,10 @@ async function loadCountry(nextCountry, options = {}) {
     hideResult();
     restyleMap();
     prepareMapSize();
-    // Először méretezzük a panelt, aztán középre az országot – különben DE/IT túl kicsi marad.
+    // Először méretezzük a panelt, aztán lágyan középre az országot.
     requestAnimationFrame(() => {
       prepareMapSize();
       fitCountry(true);
-      scheduleMapRefresh();
-      setTimeout(() => {
-        prepareMapSize();
-        if (!hasZoneSelection() && !state.activeRange) fitCountry(false);
-        setTimeout(buildLabels, 40);
-      }, 120);
     });
     renderCities();
     updateLegend();
@@ -1110,26 +1108,78 @@ function fullFeatureBounds(feature) {
   }
 }
 
+function prefersReducedMotion() {
+  try {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch {
+    return false;
+  }
+}
+
+function clampNumber(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function targetForBounds(bounds, padding, maxZoom) {
+  const pad = Array.isArray(padding)
+    ? L.point(padding[0], padding[1])
+    : L.point(padding || 40, padding || 40);
+  let zoom = map.getBoundsZoom(bounds, false, pad);
+  if (!Number.isFinite(zoom)) zoom = map.getZoom();
+  zoom = Math.min(zoom, maxZoom);
+  return {
+    center: bounds.getCenter(),
+    zoom
+  };
+}
+
+function flightDurationSeconds(fromCenter, toCenter, fromZoom, toZoom) {
+  const distanceM = fromCenter.distanceTo(toCenter);
+  const zoomDelta = Math.abs(fromZoom - toZoom);
+  const distanceFactor = clampNumber(distanceM / 780000, 0, 1);
+  const zoomFactor = clampNumber(zoomDelta / 4.2, 0, 1);
+  return clampNumber(0.95 + distanceFactor * 0.7 + zoomFactor * 0.45, 0.9, 1.9);
+}
+
 function softFitBounds(bounds, options = {}) {
   if (!bounds?.isValid()) return false;
   prepareMapSize();
   const fit = countryFitOptions();
-  const opts = {
-    padding: options.padding || fit.countryPadding || [40, 40],
-    maxZoom: options.maxZoom ?? fit.countryMaxZoom ?? 8,
-    duration: options.duration ?? 0.95,
-    easeLinearity: 0.18
-  };
-  try {
-    if (typeof map.flyToBounds === 'function' && (opts.duration || 0) > 0.05) {
-      map.flyToBounds(bounds, opts);
-    } else {
-      map.fitBounds(bounds, { padding: opts.padding, maxZoom: opts.maxZoom, animate: opts.duration > 0.05 });
-    }
-  } catch {
-    map.fitBounds(bounds, { padding: opts.padding, maxZoom: opts.maxZoom, animate: true });
+  const padding = options.padding || fit.countryPadding || [40, 40];
+  const maxZoom = options.maxZoom ?? fit.countryMaxZoom ?? 8;
+  const instant = options.duration != null && options.duration <= 0.05;
+
+  try { map.stop(); } catch { /* ignore */ }
+
+  if (instant || prefersReducedMotion()) {
+    map.fitBounds(bounds, { padding, maxZoom, animate: false });
+    scheduleMapRefresh();
+    return true;
   }
-  scheduleMapRefresh();
+
+  const target = targetForBounds(bounds, padding, maxZoom);
+  const fromCenter = map.getCenter();
+  const fromZoom = map.getZoom();
+  const duration = options.duration ?? flightDurationSeconds(fromCenter, target.center, fromZoom, target.zoom);
+  const token = ++state.flightToken;
+
+  try {
+    map.flyTo(target.center, target.zoom, {
+      duration,
+      easeLinearity: options.easeLinearity ?? 0.48,
+      noMoveStart: false
+    });
+  } catch {
+    map.fitBounds(bounds, { padding, maxZoom, animate: true, duration: Math.min(duration, 1.2) });
+  }
+
+  const finish = () => {
+    if (token !== state.flightToken) return;
+    scheduleMapRefresh();
+    setTimeout(buildLabels, 40);
+  };
+  map.once('moveend', finish);
+  setTimeout(finish, Math.ceil(duration * 1000) + 180);
   return true;
 }
 
@@ -1147,7 +1197,7 @@ function fitFeature(feature, options = {}) {
   return softFitBounds(bounds, {
     padding: options.padding || [48, 48],
     maxZoom: options.maxZoom ?? fit.zoneMaxZoom,
-    duration: options.duration ?? 0.9
+    duration: options.duration
   });
 }
 
@@ -1171,7 +1221,7 @@ function fitActiveRange(smooth = true) {
   softFitBounds(merged, {
     padding: [36, 36],
     maxZoom: fit.rangeMaxZoom,
-    duration: smooth ? 1.05 : 0.01
+    duration: smooth ? undefined : 0.01
   });
 }
 
@@ -1181,7 +1231,7 @@ function fitCountry(smooth = true) {
   softFitBounds(state.layer.getBounds(), {
     padding: fit.countryPadding,
     maxZoom: fit.countryMaxZoom,
-    duration: smooth ? 1.05 : 0.01
+    duration: smooth ? undefined : 0.01
   });
 }
 
@@ -1200,7 +1250,7 @@ function fitSelectedZones(smooth = true) {
   softFitBounds(merged, {
     padding: multi ? [48, 48] : [56, 56],
     maxZoom: multi ? Math.min(fit.rangeMaxZoom, fit.zoneMaxZoom) : fit.zoneMaxZoom,
-    duration: smooth ? 0.95 : 0.01
+    duration: smooth ? undefined : 0.01
   });
 }
 
@@ -1251,9 +1301,9 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
     } else {
       const feature = state.features.get(key);
       const fitOpts = countryFitOptions();
-      if (!fitFeature(feature, { maxZoom: fitOpts.zoneMaxZoom, padding: [56, 56], duration: 0.95 })) {
+      if (!fitFeature(feature, { maxZoom: fitOpts.zoneMaxZoom, padding: [56, 56] })) {
         const bounds = L.featureGroup(state.groups.get(key)).getBounds();
-        if (bounds.isValid()) softFitBounds(bounds, { padding: [56, 56], maxZoom: fitOpts.zoneMaxZoom, duration: 0.95 });
+        if (bounds.isValid()) softFitBounds(bounds, { padding: [56, 56], maxZoom: fitOpts.zoneMaxZoom });
       }
     }
   }
@@ -1354,13 +1404,19 @@ async function executeSearch(rawValue, options = {}) {
   if (lookup.verified && Number.isFinite(lookup.latitude) && Number.isFinite(lookup.longitude)) {
     showPlaceMarker(lookup.latitude, lookup.longitude, result.place || value);
     const zoom = state.country === 'HU' ? 10 : 11;
-    try {
-      if (typeof map.flyTo === 'function') map.flyTo([lookup.latitude, lookup.longitude], zoom, { duration: 0.9, easeLinearity: 0.2 });
-      else map.setView([lookup.latitude, lookup.longitude], zoom, { animate: true });
-    } catch {
-      map.setView([lookup.latitude, lookup.longitude], zoom, { animate: true });
+    const target = L.latLng(lookup.latitude, lookup.longitude);
+    try { map.stop(); } catch { /* ignore */ }
+    if (prefersReducedMotion()) {
+      map.setView(target, zoom, { animate: false });
+    } else {
+      const duration = flightDurationSeconds(map.getCenter(), target, map.getZoom(), zoom);
+      try {
+        map.flyTo(target, zoom, { duration, easeLinearity: 0.48 });
+      } catch {
+        map.setView(target, zoom, { animate: true });
+      }
     }
-    scheduleMapRefresh();
+    map.once('moveend', () => scheduleMapRefresh());
   }
   setInputMessage(lookup.networkError ? 'A zóna megjelent, de a hálózati ellenőrzés nem sikerült.' : 'A találat megjelent a térképen.', Boolean(lookup.networkError));
   if (!options.fromHistory) addHistory({ country: state.country, postcode: value, place: result.place, prefix });

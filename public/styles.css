@@ -407,8 +407,13 @@ html[data-theme='dark'] .fs-country-flags {
 #map { width: 100%; height: 100%; min-height: 0; background: var(--map-bg); }
 .leaflet-container { background: var(--map-bg) !important; font: inherit; }
 .leaflet-tile-pane, .leaflet-overlay-pane, .leaflet-marker-pane { backface-visibility: hidden; }
-.leaflet-tile { transition: none !important; }
-.leaflet-fade-anim .leaflet-tile, .leaflet-zoom-anim .leaflet-zoom-animated { transition: none !important; }
+/* Csempe-fádé oké; a zoom-transformot a flyTo képkockánként vezérli, CSS transition ütközne vele. */
+.leaflet-fade-anim .leaflet-tile {
+  transition: opacity .25s ease !important;
+}
+.leaflet-zoom-anim .leaflet-zoom-animated {
+  transition: none !important;
+}
 .leaflet-control-zoom a { color: #1b2720 !important; }
 .leaflet-control-attribution { font-size: 9px !important; }
 .leaflet-tooltip { border-radius: 8px; border: 1px solid #cbd9cf; box-shadow: 0 8px 20px rgba(0,0,0,.12); }
@@ -640,6 +645,10 @@ html[data-theme='dark'] .city-dot { background: #9fd4ab; box-shadow: 0 0 0 2px #
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  .leaflet-zoom-anim .leaflet-zoom-animated,
+  .leaflet-fade-anim .leaflet-tile {
+    transition: none !important;
+  }
 }
 
 /* V3.3: betöltési hiba és újrapróbálás */
@@ -678,14 +687,12 @@ html[data-theme='dark'] .map-loading {
   -webkit-tap-highlight-color: transparent;
 }
 .leaflet-overlay-pane svg,
-.leaflet-overlay-pane path.ftrans-zone-path,
-.leaflet-zoom-anim .leaflet-zoom-animated {
+.leaflet-overlay-pane path.ftrans-zone-path {
   transition: none !important;
   animation: none !important;
 }
-.leaflet-fade-anim .leaflet-tile,
 .leaflet-fade-anim .leaflet-popup {
-  transition: none !important;
+  transition: opacity .18s ease !important;
 }
 
 .legend-chips {
