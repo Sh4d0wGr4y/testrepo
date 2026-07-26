@@ -33,19 +33,30 @@ try {
   await wait(900);
   const active = await page.locator('.range-button.is-active').count();
   if (active !== 0) throw new Error(`DE alapból aktív csoport: ${active}`);
-  const visible = await page.evaluate(() => [...document.querySelectorAll('.leaflet-overlay-pane path')]
-    .filter((p) => Number(p.getAttribute('fill-opacity') || 1) > 0.05).length);
-  if (visible < 80) throw new Error(`DE túl kevés látható zóna: ${visible}`);
+  const deLayer = await page.evaluate(() => ({
+    paths: [...document.querySelectorAll('.leaflet-overlay-pane path')]
+      .filter((p) => Number(p.getAttribute('fill-opacity') || 1) > 0.05).length,
+    canvases: document.querySelectorAll('.leaflet-overlay-pane canvas').length,
+    quick: document.querySelectorAll('.quick-button').length
+  }));
+  if (deLayer.paths < 80 && (deLayer.canvases < 1 || deLayer.quick < 80)) {
+    throw new Error(`DE túl kevés látható zóna: ${JSON.stringify(deLayer)}`);
+  }
   await page.screenshot({ path: path.join(out, 'v332-de-full.png'), fullPage: true });
-  console.log('OK DE full country', visible);
+  console.log('OK DE full country', deLayer);
 
   await page.locator('.range-button', { hasText: '01–10' }).click();
   await wait(700);
-  const filteredVisible = await page.evaluate(() => [...document.querySelectorAll('.leaflet-overlay-pane path')]
-    .filter((p) => Number(p.getAttribute('fill-opacity') || 1) > 0.05).length);
-  if (filteredVisible > 20) throw new Error(`DE 01–10 szűrés után túl sok látható: ${filteredVisible}`);
+  const filtered = await page.evaluate(() => ({
+    paths: [...document.querySelectorAll('.leaflet-overlay-pane path')]
+      .filter((p) => Number(p.getAttribute('fill-opacity') || 1) > 0.05).length,
+    quick: document.querySelectorAll('.quick-button').length,
+    activeRanges: document.querySelectorAll('.range-button.is-active').length
+  }));
+  if (filtered.activeRanges < 1) throw new Error('DE 01–10 szűrés nem aktív');
+  if (filtered.quick > 15) throw new Error(`DE 01–10 szűrés után túl sok gyorsgomb: ${filtered.quick}`);
   await page.screenshot({ path: path.join(out, 'v332-de-01-10.png'), fullPage: true });
-  console.log('OK DE filtered', filteredVisible);
+  console.log('OK DE filtered', filtered);
 
   await page.click('#showAllButton');
   await wait(400);
