@@ -287,6 +287,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .ftrans-zone-path.is-hidden {
   pointer-events: none !important;
 }
+.ftrans-zone-path.is-dimmed {
+  /* a nem kijelölt zónák háttérbe szorulnak */
+}
 .place-marker-icon {
   background: transparent !important;
   border: 0 !important;

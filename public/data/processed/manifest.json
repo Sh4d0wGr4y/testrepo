@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.6",
+  "appVersion": "3.3.7",
   "packagedAt": "2026-07-26T09:30:00.000Z",
-  "notes": "V3.3.6: Google Maps opens zone/place with a pin marker, not bare map view."
+  "notes": "V3.3.7: selection dims others; Maps uses pure coords pin; default no filters/cities."
 }

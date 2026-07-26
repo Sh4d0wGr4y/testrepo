@@ -99,7 +99,7 @@ try {
   await page.waitForFunction(() => document.getElementById('mapLoading')?.hidden === true, null, { timeout: 30000 });
   console.log('OK: gyors országváltás');
 
-  // DE: Teljes ország után keresés aktiválja a csoportot + helyjelölő
+  // DE: keresés kijelöl zónát, de NEM aktivál csoportszűrőt (alapból tiszta szűrők)
   await page.click('.country-flag-button[data-country="DE"]');
   await page.waitForFunction(() => document.getElementById('mapLoading')?.hidden === true, null, { timeout: 30000 });
   await page.click('#showAllButton');
@@ -109,13 +109,17 @@ try {
   await page.fill('#searchInput', '10115');
   await page.click('#searchButton');
   await wait(1500);
-  const activeLabel = (await page.locator('.range-button.is-active').textContent())?.trim();
-  if (activeLabel !== '01–10') throw new Error(`DE keresés nem aktiválta a 01–10 csoportot: ${activeLabel}`);
+  const activeAfterSearch = await page.locator('.range-button.is-active').count();
+  if (activeAfterSearch !== 0) throw new Error('DE keresés után csoportszűrő aktív lett (nem szabadna)');
   const selectedDe = (await page.locator('.quick-button.is-active').textContent())?.trim();
   if (selectedDe !== '10') throw new Error(`DE keresés nem jelölte a 10-es zónát: ${selectedDe}`);
   const placePin = await page.locator('.place-map-pin').count();
   if (placePin < 1) throw new Error('DE keresés után nincs helyjelölő a térképen');
-  console.log('OK: Teljes ország utáni keresés aktivál csoportot + pin');
+  const mapsHref = await page.locator('#mapsLink').getAttribute('href');
+  if (!mapsHref || !/maps\?q=-?\d/.test(mapsHref) || /postai zóna/.test(decodeURIComponent(mapsHref))) {
+    throw new Error(`DE Maps link hibás: ${mapsHref}`);
+  }
+  console.log('OK: keresés kijelöl, szűrő tiszta, Maps pin link');
 
   // HU keresés
   await page.click('.country-flag-button[data-country="HU"]');

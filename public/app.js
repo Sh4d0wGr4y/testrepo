@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.6';
+const APP_VERSION = '3.3.7';
 
 const CONFIG = {
   HU: {
@@ -97,10 +97,10 @@ const CITIES_KEY = 'ftrans-show-cities-v3';
 function readShowCities() {
   try {
     const value = localStorage.getItem(CITIES_KEY);
-    if (value === null) return true;
-    return value !== '0';
+    if (value === null) return false; // alapból nincs város-szűrő / jelölés
+    return value === '1';
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -221,6 +221,7 @@ function rangeForPrefix(country, prefix) {
 function polygonStyle(feature) {
   const prefix = String(feature.properties?.prefix ?? '');
   const selected = prefix === state.selectedPrefix;
+  const hasSelection = Boolean(state.selectedPrefix);
   const visible = inActiveRange(prefix) || selected;
   const fill = colorFor(prefix);
   // Szűrt nézetben a nem ide tartozó zónák teljesen eltűnnek (nem csak halványak).
@@ -236,16 +237,17 @@ function polygonStyle(feature) {
       interactive: false
     };
   }
+  // Kijelöléskor csak a választott zóna legyen erős; a többi láthatóan háttérbe kerül.
   return {
     renderer: svgRenderer,
-    color: selected ? '#1faa45' : 'rgba(20, 40, 28, 0.45)',
-    weight: selected ? 3 : 1.05,
-    opacity: selected ? 1 : 0.8,
+    color: selected ? '#1faa45' : 'rgba(20, 40, 28, 0.35)',
+    weight: selected ? 3.4 : (hasSelection ? 0.7 : 1.05),
+    opacity: selected ? 1 : (hasSelection ? 0.35 : 0.75),
     fillColor: fill,
-    fillOpacity: selected ? 0.9 : 0.58,
+    fillOpacity: selected ? 0.92 : (hasSelection ? 0.16 : 0.55),
     lineCap: 'round',
     lineJoin: 'round',
-    className: selected ? 'ftrans-zone-path is-selected' : 'ftrans-zone-path',
+    className: selected ? 'ftrans-zone-path is-selected' : (hasSelection ? 'ftrans-zone-path is-dimmed' : 'ftrans-zone-path'),
     interactive: true
   };
 }
@@ -355,7 +357,14 @@ function buildQuickButtons() {
 }
 
 function restyleMap() {
-  if (state.layer) state.layer.setStyle(polygonStyle);
+  if (!state.layer) return;
+  state.layer.eachLayer((layer) => {
+    const feature = layer.feature;
+    if (!feature) return;
+    layer.setStyle(polygonStyle(feature));
+    const prefix = String(feature.properties?.prefix ?? '');
+    if (prefix === state.selectedPrefix && layer.bringToFront) layer.bringToFront();
+  });
 }
 
 function ringArea(ring) {
@@ -598,6 +607,7 @@ function buildLabels() {
   state.labels.clearLayers();
   if (!state.features.size) return;
   const forceRange = Boolean(state.activeRange);
+  const hasSelection = Boolean(state.selectedPrefix);
   const candidates = [];
   for (const [prefix, feature] of state.features.entries()) {
     if (state.activeRange && !inActiveRange(prefix) && prefix !== state.selectedPrefix) continue;
@@ -612,8 +622,9 @@ function buildLabels() {
     const collides = occupied.some((p) => p.distanceTo(pixel) < (forceRange ? 23 : 34));
     if (collides && !item.selected) continue;
     occupied.push(pixel);
+    const muted = hasSelection && !item.selected;
     const icon = L.divIcon({
-      className: `zone-label${item.selected ? ' is-selected' : ''}`,
+      className: `zone-label${item.selected ? ' is-selected' : ''}${muted ? ' is-muted' : ''}`,
       html: `<span>${item.prefix}</span>`,
       iconSize: null,
       iconAnchor: [15, 12]
@@ -679,13 +690,21 @@ function createGeoLayer(data, nextCountry, nextGroups, nextFeatures) {
         selectPrefix(prefix, false);
       });
       polygon.on('mouseover', (event) => {
-        if (prefix !== state.selectedPrefix) {
-          event.target.setStyle({
-            weight: 2.2,
-            color: '#1faa45',
-            fillOpacity: Math.min(0.78, Math.max(polygonStyle(feature).fillOpacity, 0.5))
+        if (prefix === state.selectedPrefix) return;
+        event.target.setStyle({
+          weight: 2.2,
+          color: '#1faa45',
+          fillOpacity: state.selectedPrefix ? 0.28 : 0.7,
+          opacity: 0.9
+        });
+        if (event.target.bringToFront) event.target.bringToFront();
+        // A kijelölt zóna mindig maradjon felül.
+        if (state.selectedPrefix && state.layer) {
+          state.layer.eachLayer((layer) => {
+            if (String(layer.feature?.properties?.prefix ?? '') === state.selectedPrefix && layer.bringToFront) {
+              layer.bringToFront();
+            }
           });
-          if (event.target.bringToFront) event.target.bringToFront();
         }
       });
       polygon.on('mouseout', (event) => event.target.setStyle(polygonStyle(feature)));
@@ -947,9 +966,8 @@ function selectPrefix(prefix, fit = true, fullCode = '', options = {}) {
   }
   state.selectedPrefix = prefix;
   const range = rangeForPrefix(state.country, prefix);
-  // Csoportot csak keresésnél, vagy ha már szűrt nézetben vagyunk és a zóna kívül esik.
-  // Teljes országnézetben a kattintás csak kijelöl, nem kapcsol be szűrőt.
-  if (range && (options.activateRange || (state.activeRange && !inActiveRange(prefix)))) {
+  // Csoportszűrőt csak explicit kérésre kapcsolunk (ne alapból).
+  if (range && options.activateRange) {
     state.activeRange = range;
   }
   restyleMap();
@@ -1021,7 +1039,7 @@ async function executeSearch(rawValue, options = {}) {
   }
   setInputMessage('Keresés folyamatban…');
   const prefix = value.slice(0, cfg.prefixDigits).padStart(cfg.prefixDigits, '0');
-  selectPrefix(prefix, true, value, { activateRange: true });
+  selectPrefix(prefix, true, value, { activateRange: false });
   const lookup = await lookupPostcode(value);
   const message = lookup.verified
     ? 'A teljes irányítószám települési adatait online ellenőriztük.'
@@ -1055,13 +1073,21 @@ async function executeSearch(rawValue, options = {}) {
 }
 
 function zoneMapCenter(prefix) {
-  const feature = state.features.get(prefix);
+  const key = String(prefix ?? '').padStart(CONFIG[state.country].prefixDigits, '0');
+  const feature = state.features.get(key) || state.features.get(String(prefix));
   if (!feature) return null;
+  // Ugyanarra a legnagyobb darabra támaszkodunk, mint a térképes zoom.
+  const bounds = boundsForFeature(feature) || fullFeatureBounds(feature);
+  if (bounds?.isValid()) {
+    const c = bounds.getCenter();
+    if (pointInGeometry(c.lng, c.lat, feature.geometry)) {
+      return { latitude: c.lat, longitude: c.lng };
+    }
+  }
   const point = featureLabelPoint(feature);
   if (Array.isArray(point) && point.length === 2 && Number.isFinite(point[0]) && Number.isFinite(point[1])) {
     return { latitude: point[1], longitude: point[0] };
   }
-  const bounds = fullFeatureBounds(feature) || boundsForFeature(feature);
   if (bounds?.isValid()) {
     const c = bounds.getCenter();
     return { latitude: c.lat, longitude: c.lng };
@@ -1069,9 +1095,26 @@ function zoneMapCenter(prefix) {
   return null;
 }
 
+function mapsZoomForBounds(result) {
+  if (result.postcode && result.verified) return state.country === 'HU' ? 13 : 14;
+  const key = result.prefix ? String(result.prefix).padStart(CONFIG[state.country].prefixDigits, '0') : null;
+  const feature = key ? state.features.get(key) : null;
+  const bounds = feature ? (boundsForFeature(feature) || fullFeatureBounds(feature)) : null;
+  if (bounds?.isValid()) {
+    const span = Math.max(
+      Math.abs(bounds.getNorth() - bounds.getSouth()),
+      Math.abs(bounds.getEast() - bounds.getWest())
+    );
+    if (span > 2.5) return 8;
+    if (span > 1.4) return 9;
+    if (span > 0.8) return 10;
+    if (span > 0.4) return 11;
+    return 12;
+  }
+  return 10;
+}
 
 function googleMapsUrl(result) {
-  const cfg = CONFIG[state.country];
   let lat = Number(result.latitude);
   let lon = Number(result.longitude);
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
@@ -1082,34 +1125,26 @@ function googleMapsUrl(result) {
     }
   }
   if (Number.isFinite(lat) && Number.isFinite(lon)) {
-    // search?query=lat,lng → piros tűvel jelöli a pontot (a @lat,lng,z csak odavisz, jelölés nélkül)
-    if (result.place && result.postcode) {
-      const q = `${lat.toFixed(5)},${lon.toFixed(5)} (${result.postcode} ${result.place})`;
-      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
-    }
-    if (result.prefix && !result.postcode) {
-      const q = `${lat.toFixed(5)},${lon.toFixed(5)} (${result.prefix}-es postai zóna, ${cfg.name})`;
-      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
-    }
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat.toFixed(5)},${lon.toFixed(5)}`)}`;
+    const zoom = mapsZoomForBounds(result);
+    // Csak koordináta — szöveges toldalék nélkül (az félrevinne a Google keresőt).
+    // q= + ll= + z= → piros tű a pontos ponton.
+    return `https://maps.google.com/maps?q=${lat.toFixed(5)},${lon.toFixed(5)}&ll=${lat.toFixed(5)},${lon.toFixed(5)}&z=${zoom}`;
   }
-  const query = [result.postcode, result.place, result.prefix ? `${result.prefix}-es postai zóna` : '', cfg.name]
-    .filter(Boolean)
-    .join(' ');
+  const cfg = CONFIG[state.country];
+  const query = [result.postcode, result.place, cfg.name].filter(Boolean).join(' ');
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query || cfg.name)}`;
 }
 
 function showResult(result) {
-  state.currentResult = result;
   const cfg = CONFIG[state.country];
   // Zónakattintásnál töltsük fel a középpontot a Maps linkhez.
   if ((!Number.isFinite(result.latitude) || !Number.isFinite(result.longitude)) && result.prefix) {
     const center = zoneMapCenter(String(result.prefix));
     if (center) {
       result = { ...result, latitude: center.latitude, longitude: center.longitude };
-      state.currentResult = result;
     }
   }
+  state.currentResult = result;
   elements.resultCard.hidden = false;
   elements.resultBadge.textContent = result.verified ? 'Ellenőrzött találat' : 'Kiválasztott zóna';
   elements.resultCode.textContent = result.postcode || result.prefix;
@@ -1120,8 +1155,8 @@ function showResult(result) {
   elements.detailRegion.textContent = result.region || '—';
   elements.resultMessage.textContent = result.message || '';
   elements.mapsLink.href = googleMapsUrl(result);
-  elements.mapsLink.title = Number.isFinite(result.latitude)
-    ? 'Megnyitás Google Mapsen a kijelölt területnél'
+  elements.mapsLink.title = Number.isFinite(Number(result.latitude))
+    ? 'Megnyitás Google Mapsen a kijelölt pontnál'
     : 'Megnyitás Google Mapsen';
 }
 function hideResult() {
