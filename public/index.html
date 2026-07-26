@@ -2,8 +2,11 @@
 <html lang="hu" data-theme="light">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
   <meta name="theme-color" content="#f4f7f5" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="description" content="F-TRANS irányítószám- és postai zóna kereső Magyarországhoz, Németországhoz és Olaszországhoz." />
   <title>F-TRANS Irányítószám-kereső</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -17,7 +20,9 @@
   <a class="skip-link" href="#searchInput">Ugrás a keresőhöz</a>
 
   <div class="app-shell">
-    <aside class="sidebar" aria-label="Keresés és szűrés">
+    <button class="mobile-drawer-backdrop" id="mobileDrawerBackdrop" type="button" aria-label="Szűrőpanel bezárása" hidden></button>
+
+    <aside class="sidebar" id="sidebar" aria-label="Keresés és szűrés">
       <header class="brand-row">
         <a class="brand" href="#" aria-label="F-TRANS Irányítószám-kereső">
           <svg class="brand-mark" viewBox="0 0 72 52" aria-hidden="true">
@@ -27,6 +32,7 @@
           <span class="brand-copy"><strong>F-TRANS</strong><span>Irányítószám-kereső</span></span>
         </a>
         <div class="header-actions">
+          <button class="icon-button mobile-only" id="closeFiltersButton" type="button" aria-label="Szűrők bezárása" title="Bezárás">×</button>
           <button class="icon-button" id="infoButton" type="button" aria-label="Súgó" title="Súgó">i</button>
           <button class="icon-button" id="themeButton" type="button" aria-label="Sötét téma bekapcsolása" title="Téma">☾</button>
         </div>
@@ -181,9 +187,20 @@
 
       <footer class="map-footer">
         <span id="dataStatus">Térképi adatok betöltése…</span>
-        <span>V3.3.30 · szűrhető kétpaneles nézet</span>
+        <span>V3.3.31 · mobilbarát nézet</span>
       </footer>
     </main>
+
+    <nav class="mobile-dock" id="mobileDock" aria-label="Mobil vezérlők">
+      <button class="mobile-dock-button is-primary" id="openFiltersButton" type="button" aria-expanded="false" aria-controls="sidebar">
+        <span aria-hidden="true">☰</span>
+        <span>Keresés / szűrők</span>
+      </button>
+      <button class="mobile-dock-button" id="mobileFitButton" type="button">
+        <span aria-hidden="true">◎</span>
+        <span>Ország</span>
+      </button>
+    </nav>
   </div>
 
   <dialog class="info-dialog" id="infoDialog">

@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.30",
-  "packagedAt": "2026-07-26T20:20:40.000Z",
-  "notes": "V3.3.30: hard-clip IT zones to Italy national border (no FR/CH/AT/SI spill)."
+  "appVersion": "3.3.31",
+  "packagedAt": "2026-07-26T21:20:09.000Z",
+  "notes": "V3.3.31: iPhone/mobile map-first layout with slide-up filters drawer."
 }

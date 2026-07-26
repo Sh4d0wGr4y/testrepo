@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.30';
+const APP_VERSION = '3.3.31';
 
 const CONFIG = {
   HU: {
@@ -194,7 +194,9 @@ const elements = {
   detailRegion: $('detailRegion'), detailPostcodeLabel: $('detailPostcodeLabel'), detailPlaceLabel: $('detailPlaceLabel'),
   detailRegionLabel: $('detailRegionLabel'), resultMessage: $('resultMessage'), mapsLink: $('mapsLink'),
   fitCountryButton: $('fitCountryButton'), clearSelectionButton: $('clearSelectionButton'), fullscreenButton: $('fullscreenButton'),
-  themeButton: $('themeButton'), infoButton: $('infoButton'), infoDialog: $('infoDialog'), toast: $('toast'), dataStatus: $('dataStatus')
+  themeButton: $('themeButton'), infoButton: $('infoButton'), infoDialog: $('infoDialog'), toast: $('toast'), dataStatus: $('dataStatus'),
+  sidebar: $('sidebar'), openFiltersButton: $('openFiltersButton'), closeFiltersButton: $('closeFiltersButton'),
+  mobileDrawerBackdrop: $('mobileDrawerBackdrop'), mobileFitButton: $('mobileFitButton'), mobileDock: $('mobileDock')
 };
 
 if (typeof L === 'undefined') {
@@ -466,6 +468,30 @@ function prepareMapSize() {
   } catch {
     /* ignore */
   }
+}
+
+function isMobileLayout() {
+  return window.matchMedia('(max-width: 860px)').matches;
+}
+
+function setFiltersOpen(open) {
+  const next = Boolean(open) && isMobileLayout();
+  document.body.classList.toggle('is-filters-open', next);
+  if (elements.openFiltersButton) {
+    elements.openFiltersButton.setAttribute('aria-expanded', next ? 'true' : 'false');
+  }
+  if (elements.mobileDrawerBackdrop) {
+    elements.mobileDrawerBackdrop.hidden = !next;
+  }
+  // iOS: a panel nyitás/zárás után újraméretezzük a térképet.
+  requestAnimationFrame(() => {
+    prepareMapSize();
+    setTimeout(prepareMapSize, 260);
+  });
+}
+
+function closeFiltersIfMobile() {
+  if (isMobileLayout()) setFiltersOpen(false);
 }
 
 function getRanges(country) {
@@ -968,6 +994,7 @@ function removeActiveLayer() {
 
 async function loadCountry(nextCountry, options = {}) {
   if (!CONFIG[nextCountry]) return;
+  closeFiltersIfMobile();
   const token = ++state.loadToken;
   state.controller?.abort();
   const controller = new AbortController();
@@ -1375,6 +1402,7 @@ async function executeSearch(rawValue, options = {}) {
     return;
   }
   setInputMessage('Keresés folyamatban…');
+  closeFiltersIfMobile();
   const prefix = value.slice(0, cfg.prefixDigits).padStart(cfg.prefixDigits, '0');
   selectPrefix(prefix, true, value, { activateRange: false });
   const lookup = await lookupPostcode(value);
@@ -1788,13 +1816,45 @@ function bindEvents() {
   elements.themeButton.addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
   elements.infoButton.addEventListener('click', () => elements.infoDialog.showModal());
   elements.fullscreenButton.addEventListener('click', async () => {
+    const stage = $('mapStage');
     try {
-      if (!document.fullscreenElement) await $('mapStage').requestFullscreen();
-      else await document.exitFullscreen();
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        return;
+      }
+      if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+        return;
+      }
+      if (stage.requestFullscreen) {
+        await stage.requestFullscreen();
+        return;
+      }
+      if (stage.webkitRequestFullscreen) {
+        stage.webkitRequestFullscreen();
+        return;
+      }
+      // iPhone Safari: a div fullscreen gyakran nem elérhető — a térkép amúgy is fullscreen-szerű.
+      toast('iPhone-on a térkép nézet már nagyban jelenik meg.');
     } catch {
       toast('A teljes képernyős mód nem érhető el.');
     }
   });
+  if (elements.openFiltersButton) {
+    elements.openFiltersButton.addEventListener('click', () => setFiltersOpen(true));
+  }
+  if (elements.closeFiltersButton) {
+    elements.closeFiltersButton.addEventListener('click', () => setFiltersOpen(false));
+  }
+  if (elements.mobileDrawerBackdrop) {
+    elements.mobileDrawerBackdrop.addEventListener('click', () => setFiltersOpen(false));
+  }
+  if (elements.mobileFitButton) {
+    elements.mobileFitButton.addEventListener('click', () => {
+      closeFiltersIfMobile();
+      fitCountry(true);
+    });
+  }
   if (elements.retryButton) {
     elements.retryButton.addEventListener('click', () => {
       state.dataCache.delete(state.country);
@@ -1805,9 +1865,18 @@ function bindEvents() {
     scheduleMapRefresh();
     updateFullscreenFlags();
   });
+  document.addEventListener('webkitfullscreenchange', () => {
+    scheduleMapRefresh();
+    updateFullscreenFlags();
+  });
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
     if (elements.infoDialog?.open) return;
+    if (document.body.classList.contains('is-filters-open')) {
+      setFiltersOpen(false);
+      event.preventDefault();
+      return;
+    }
     if (hasZoneSelection() || state.placeMarker || state.currentResult) {
       clearSelection();
       event.preventDefault();
@@ -1820,7 +1889,13 @@ function bindEvents() {
     }
   });
   map.on('zoomend moveend', () => setTimeout(buildLabels, 20));
-  window.addEventListener('resize', scheduleMapRefresh, { passive: true });
+  window.addEventListener('resize', () => {
+    if (!isMobileLayout()) setFiltersOpen(false);
+    scheduleMapRefresh();
+  }, { passive: true });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', scheduleMapRefresh, { passive: true });
+  }
   if ('ResizeObserver' in window) new ResizeObserver(scheduleMapRefresh).observe($('mapStage'));
 }
 
