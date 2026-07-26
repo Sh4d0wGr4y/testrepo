@@ -656,11 +656,25 @@ function createGeoLayer(data, nextCountry, nextGroups, nextFeatures) {
       nextGroups.get(prefix).push(polygon);
       nextFeatures.set(prefix, feature);
       polygon.bindTooltip(`${CONFIG[nextCountry].name} · ${prefix}-es zóna`, { sticky: true, direction: 'top', opacity: 0.96 });
+      polygon.on('add', function onPathAdd() {
+        const el = this.getElement?.() || this._path;
+        if (el) {
+          el.setAttribute('tabindex', '-1');
+          el.style.outline = 'none';
+        }
+      });
+      // mousedown preventDefault: a böngésző ne fókuszálja az SVG path-t (fekete négyszög).
+      polygon.on('mousedown', (event) => {
+        try { event.originalEvent?.preventDefault(); } catch {}
+      });
       polygon.on('click', (event) => {
-        // Ne maradjon fókuszban az SVG path (böngésző fekete négyszög outline).
         try {
           const target = event.originalEvent?.target;
-          if (target && typeof target.blur === 'function') target.blur();
+          if (target) {
+            target.setAttribute('tabindex', '-1');
+            target.style.outline = 'none';
+            if (typeof target.blur === 'function') target.blur();
+          }
         } catch {}
         selectPrefix(prefix, false);
       });

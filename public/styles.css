@@ -403,15 +403,21 @@ html[data-theme='dark'] .map-loading {
 }
 
 /* Kattintáskor a böngésző fekete fókusz-négyszöget rajzol az SVG path köré — ezt tiltjuk. */
-.leaflet-container path.leaflet-interactive:focus,
-.leaflet-container path.ftrans-zone-path:focus,
+.leaflet-overlay-pane path,
 .leaflet-overlay-pane path:focus,
-.leaflet-overlay-pane svg:focus,
-.leaflet-pane > svg path.leaflet-interactive:focus {
+.leaflet-overlay-pane path:focus-visible,
+.leaflet-container path.leaflet-interactive,
+.leaflet-container path.leaflet-interactive:focus,
+.leaflet-container path.leaflet-interactive:focus-visible,
+.leaflet-container path.ftrans-zone-path:focus,
+.leaflet-container path.ftrans-zone-path:focus-visible,
+.leaflet-pane > svg path.leaflet-interactive:focus,
+.leaflet-pane > svg path.leaflet-interactive:focus-visible {
   outline: none !important;
   outline-width: 0 !important;
   outline-style: none !important;
   outline-color: transparent !important;
+  -webkit-tap-highlight-color: transparent;
 }
 .leaflet-overlay-pane svg,
 .leaflet-overlay-pane path.ftrans-zone-path,
