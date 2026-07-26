@@ -154,7 +154,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   background: var(--panel-soft);
   color: var(--text);
 }
-.country-flag-button .flag-emoji { font-size: 1.7rem; line-height: 1; }
+.country-flag-button .flag-img {
+  width: 34px;
+  height: 23px;
+  object-fit: cover;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(20, 35, 28, 0.18);
+}
 .country-flag-button .flag-name { font-size: 0.68rem; font-weight: 800; text-align: center; line-height: 1.2; }
 .country-flag-button.is-active {
   border-color: var(--green);
@@ -400,13 +406,16 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .fs-country-flags {
   position: absolute;
   z-index: 1200;
-  top: 18px;
-  left: 50%;
-  transform: translateX(-50%);
+  /* Alul balra: ne takarja az Esc teljes képernyős böngészőüzenetet felül. */
+  top: auto;
+  bottom: 18px;
+  left: 18px;
+  right: auto;
+  transform: none;
   display: flex;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: 22px;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 18px;
   background: rgba(255, 255, 255, 0.94);
   border: 1px solid rgba(30, 50, 38, 0.14);
   box-shadow: 0 14px 36px rgba(20, 40, 28, 0.20);
@@ -415,29 +424,31 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 }
 .fs-country-flags[hidden] { display: none !important; }
 .fs-flag-button {
-  min-width: 92px;
-  min-height: 72px;
-  padding: 10px 14px 8px;
+  min-width: 78px;
+  min-height: 68px;
+  padding: 8px 12px 7px;
   border: 1px solid transparent;
-  border-radius: 16px;
+  border-radius: 14px;
   background: transparent;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
   line-height: 1;
   color: var(--text);
   transition: transform .14s ease, background .14s ease, border-color .14s ease, box-shadow .14s ease;
 }
-.fs-flag-emoji {
-  font-size: 2.15rem;
-  line-height: 1;
-  filter: drop-shadow(0 2px 4px rgba(20, 40, 28, 0.12));
+.fs-flag-img {
+  width: 40px;
+  height: 27px;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 0 0 1px rgba(20, 35, 28, 0.22);
 }
 .fs-flag-code {
   font-family: var(--font-ui);
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   font-weight: 850;
   letter-spacing: 0.08em;
   color: var(--muted);
@@ -469,16 +480,17 @@ html[data-theme='dark'] .fs-flag-button.is-active .fs-flag-code {
 @media (max-width: 580px) {
   .fs-country-flags {
     gap: 8px;
-    padding: 10px;
-    top: 12px;
+    padding: 8px;
+    left: 10px;
+    bottom: 12px;
   }
   .fs-flag-button {
-    min-width: 74px;
-    min-height: 64px;
-    padding: 8px 10px 6px;
+    min-width: 66px;
+    min-height: 58px;
+    padding: 7px 8px 6px;
   }
-  .fs-flag-emoji { font-size: 1.85rem; }
-  .fs-flag-code { font-size: 0.82rem; }
+  .fs-flag-img { width: 34px; height: 23px; }
+  .fs-flag-code { font-size: 0.78rem; }
 }
 
 .map-stage {

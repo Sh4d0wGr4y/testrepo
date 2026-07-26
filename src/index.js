@@ -4,7 +4,7 @@
  * - missing /data/* and /vendor/* never fall back to index.html
  */
 
-const APP_VERSION = '3.3.20';
+const APP_VERSION = '3.3.21';
 
 const REQUIRED_ASSETS = [
   { path: '/data/processed/manifest.json', kind: 'json', minBytes: 200 },
@@ -12,7 +12,10 @@ const REQUIRED_ASSETS = [
   { path: '/data/processed/de_prefix2.geojson', kind: 'geojson', minBytes: 1000, minFeatures: 95, country: 'DE' },
   { path: '/data/processed/it_prefix2.geojson', kind: 'geojson', minBytes: 1000, minFeatures: 93, country: 'IT' },
   { path: '/vendor/leaflet.js', kind: 'js', minBytes: 10000 },
-  { path: '/vendor/leaflet.css', kind: 'css', minBytes: 1000 }
+  { path: '/vendor/leaflet.css', kind: 'css', minBytes: 1000 },
+  { path: '/flags/hu.svg', kind: 'svg', minBytes: 80 },
+  { path: '/flags/de.svg', kind: 'svg', minBytes: 80 },
+  { path: '/flags/it.svg', kind: 'svg', minBytes: 80 }
 ];
 
 const PROTECTED_PREFIXES = ['/data/', '/vendor/'];
