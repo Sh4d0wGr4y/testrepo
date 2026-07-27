@@ -21,7 +21,15 @@
   --radius-lg: 22px;
   --radius-md: 14px;
   --font-ui: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  --font-brand: "Cooper Black", "CooperBlack", "Cooper Std", Georgia, serif;
+  --font-brand: "Cooper Black", "CooperBlack", "Cooper Std", "Arial Black", Georgia, serif;
+}
+
+@font-face {
+  font-family: "Cooper Black";
+  src: local("Cooper Black"), local("CooperBlack"), local("Cooper Std Black");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
 }
 
 html[data-theme="dark"] {
@@ -108,17 +116,19 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 }
 .brand-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; min-width: 0; }
-.brand-mark { width: 58px; height: 43px; color: var(--green); flex: 0 0 auto; filter: drop-shadow(0 6px 12px rgba(27, 138, 62, 0.25)); }
 .brand-copy { display: flex; flex-direction: column; min-width: 0; }
+.brand-logo,
 .brand-copy strong {
   font-family: var(--font-brand);
-  font-size: 1.42rem;
-  line-height: 1;
-  letter-spacing: -0.03em;
+  font-size: 1.85rem;
+  line-height: 0.92;
+  letter-spacing: 0.01em;
   font-style: normal;
   font-weight: 900;
+  color: var(--green);
+  text-transform: uppercase;
 }
-.brand-copy span { color: var(--green); font-size: 0.78rem; font-weight: 800; margin-top: 6px; letter-spacing: 0.02em; }
+.brand-copy span { color: var(--muted); font-size: 0.78rem; font-weight: 800; margin-top: 6px; letter-spacing: 0.02em; }
 .header-actions { display: flex; gap: 6px; }
 .icon-button {
   width: 40px; height: 40px; display: inline-grid; place-items: center;
@@ -817,8 +827,8 @@ html[data-theme='dark'] .city-dot { background: #9fd4ab; box-shadow: 0 0 0 2px #
 
 @media (max-width: 580px) {
   .sidebar { gap: 12px; }
-  .brand-mark { width: 46px; }
-  .brand-copy strong { font-size: 1.05rem; }
+  .brand-logo,
+  .brand-copy strong { font-size: 1.45rem; }
   .brand-copy span { font-size: .7rem; }
   .search-line { grid-template-columns: 1fr; }
   .primary-button { width: 100%; min-height: 48px; }
