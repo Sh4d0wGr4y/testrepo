@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.43",
-  "packagedAt": "2026-07-27T20:03:54.000Z",
-  "notes": "V3.3.43: decade zone groups by first digit (DE 01–09, 10–19, …; IT 00–09, …) and group-based coloring for DE/IT."
+  "appVersion": "3.3.44",
+  "packagedAt": "2026-07-27T20:18:58.000Z",
+  "notes": "V3.3.44: premium glass UI — stable filter button grid, glassmorphism cards/buttons, hover lift animations, sheen on primary button."
 }
