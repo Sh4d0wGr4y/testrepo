@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.49",
-  "packagedAt": "2026-07-27T20:51:12.000Z",
-  "notes": "V3.3.49: clicking the F TRANS logo reloads the whole page."
+  "appVersion": "3.3.50",
+  "packagedAt": "2026-07-27T20:57:54.000Z",
+  "notes": "V3.3.50: premium micro-animations — click ripple, cascade entrance on country switch, breathing glow on selected, icon micro-motions."
 }

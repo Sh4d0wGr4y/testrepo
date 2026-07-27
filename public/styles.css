@@ -1099,6 +1099,71 @@ html[data-theme='dark'] .map-loading {
   background: linear-gradient(180deg, var(--zone-color), var(--zone-color-deep)) !important;
 }
 
+/* ── Prémium mikro-animációk ─────────────────────────────────────────── */
+
+/* Ripple: kattintáskor lágy hullám fut szét a gombon. */
+.range-button, .quick-button, .country-flag-button, .segment,
+.primary-button, .primary-link, .secondary-button, .icon-button,
+.mobile-dock-button, .history-item {
+  overflow: hidden;
+  position: relative;
+}
+.ui-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(27, 138, 62, 0.28) 0%, rgba(27, 138, 62, 0.12) 45%, transparent 70%);
+  transform: scale(0);
+  animation: ui-ripple .62s var(--ease-premium) forwards;
+  pointer-events: none;
+  z-index: 0;
+}
+.primary-button .ui-ripple, .primary-link .ui-ripple, .mobile-dock-button.is-primary .ui-ripple {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.2) 45%, transparent 70%);
+}
+@keyframes ui-ripple {
+  to { transform: scale(1); opacity: 0; }
+}
+
+/* Országváltáskor kaszkádban úsznak be a gombok. */
+body.is-country-anim .range-button,
+body.is-country-anim .quick-button {
+  animation: btn-cascade .5s var(--ease-premium) backwards;
+  animation-delay: calc(var(--i, 0) * 16ms);
+}
+body.is-country-anim .country-flag-button {
+  animation: none;
+}
+@keyframes btn-cascade {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* A kijelölt gombok finoman „lélegeznek”. */
+.range-button.is-active,
+.quick-button.is-active,
+.country-flag-button.is-active {
+  animation: active-breath 3.2s ease-in-out infinite;
+}
+@keyframes active-breath {
+  0%, 100% { box-shadow: inset 0 1px 0 var(--glass-inner), 0 0 0 2px rgba(32, 139, 57, 0.12); }
+  50% { box-shadow: inset 0 1px 0 var(--glass-inner), 0 0 0 3px rgba(32, 139, 57, 0.22), 0 6px 18px rgba(32, 139, 57, 0.14); }
+}
+
+/* Kereső gomb ikonja megpördül hoverre. */
+.primary-button span[aria-hidden] {
+  display: inline-block;
+  transition: transform .34s var(--ease-premium);
+}
+.primary-button:hover span[aria-hidden] { transform: rotate(-14deg) scale(1.18); }
+
+/* Kapcsolósorok apró elmozdulása. */
+.check-row { transition: transform .22s var(--ease-premium); border-radius: 8px; }
+.check-row:hover { transform: translateX(3px); }
+
+/* Zászlók finom kiemelése hoverre. */
+.country-flag-button:hover .flag-img { transform: scale(1.12); }
+.country-flag-button .flag-img { transition: transform .3s var(--ease-premium); }
+
 /* Finom megjelenés: aki csökkentett animációt kér, annak minden nyugodt marad. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -1106,4 +1171,5 @@ html[data-theme='dark'] .map-loading {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+  .ui-ripple { display: none; }
 }

@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.49';
+const APP_VERSION = '3.3.50';
 
 const CONFIG = {
   HU: {
@@ -503,9 +503,11 @@ function buildRangeButtons() {
   }
   if (section) section.hidden = false;
   const digits = CONFIG[state.country].prefixDigits;
+  let animIndex = 0;
   for (const range of getRanges(state.country)) {
     const button = document.createElement('button');
     button.type = 'button';
+    button.style.setProperty('--i', animIndex++);
     const active = isActiveRange(range);
     // Színes mód: csak a kijelölt zónacsoport(ok) kapnak színt.
     const showColor = state.showRangeColors && active;
@@ -546,9 +548,11 @@ function buildQuickButtons() {
   const prefixes = [...state.groups.keys()].sort((a, b) => prefixNumber(a) - prefixNumber(b));
   const filtered = hasActiveRanges() ? prefixes.filter(inActiveRange) : prefixes;
   elements.quickEmpty.hidden = filtered.length > 0;
+  let animIndex = 0;
   for (const prefix of filtered) {
     const button = document.createElement('button');
     button.type = 'button';
+    button.style.setProperty('--i', animIndex++);
     const selected = isSelectedPrefix(prefix);
     // Színes mód: csak a kijelölt zónaszám(ok) kapnak színt.
     const showColor = state.showQuickColors && selected;
@@ -1004,6 +1008,7 @@ async function loadCountry(nextCountry, options = {}) {
     updateCountryUI();
     buildRangeButtons();
     buildQuickButtons();
+    playCountrySwitchAnimation();
     hideResult();
     restyleMap();
     prepareMapSize();
@@ -1873,6 +1878,36 @@ function bindEvents() {
   }
   if ('ResizeObserver' in window) new ResizeObserver(scheduleMapRefresh).observe($('mapStage'));
 }
+
+// Prémium mikro-animációk: kaszkád belépés országváltásnál + ripple kattintásra.
+let countryAnimTimer = null;
+function playCountrySwitchAnimation() {
+  document.body.classList.remove('is-country-anim');
+  void document.body.offsetWidth; // restart animations
+  document.body.classList.add('is-country-anim');
+  clearTimeout(countryAnimTimer);
+  countryAnimTimer = setTimeout(() => document.body.classList.remove('is-country-anim'), 1100);
+}
+
+const RIPPLE_SELECTOR = [
+  '.range-button', '.quick-button', '.country-flag-button', '.segment',
+  '.primary-button', '.primary-link', '.secondary-button', '.icon-button',
+  '.mobile-dock-button', '.history-item'
+].join(',');
+document.addEventListener('pointerdown', (event) => {
+  const target = event.target.closest?.(RIPPLE_SELECTOR);
+  if (!target || target.disabled) return;
+  const rect = target.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height) * 2.1;
+  const ripple = document.createElement('span');
+  ripple.className = 'ui-ripple';
+  ripple.style.width = ripple.style.height = `${size}px`;
+  ripple.style.left = `${event.clientX - rect.left - size / 2}px`;
+  ripple.style.top = `${event.clientY - rect.top - size / 2}px`;
+  target.appendChild(ripple);
+  ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
+  setTimeout(() => ripple.remove(), 900);
+}, { passive: true });
 
 async function init() {
   const savedTheme = (() => {

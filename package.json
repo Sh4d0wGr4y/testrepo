@@ -1,6 +1,6 @@
 {
   "name": "ftrans-iranyitoszam-terkep",
-  "version": "3.3.49",
+  "version": "3.3.50",
   "private": true,
   "description": "F TRANS ZónaTérkép V3.3 – önálló GeoJSON + Leaflet, Cloudflare Workers.",
   "scripts": {
