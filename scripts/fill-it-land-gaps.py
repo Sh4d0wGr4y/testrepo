@@ -306,9 +306,11 @@ def main() -> None:
     # Hard political clip — never paint neighboring countries.
     geoms = [as_valid(g.intersection(admin)) for g in geoms]
 
-    # Remove tiny detached scraps (visual dots) while keeping meaningful islands.
-    # Inland pieces nearer another zone are reassigned in the next step.
+    # Remove tiny detached SEA scraps (visual dots). Never drop land: any part
+    # mostly on the land target stays painted (ownership is fixed by the
+    # reassign step), otherwise the dot heuristics from V3.3.32 apply.
     cleaned_geoms = []
+    dropped_dots = 0
     for g in geoms:
         g = as_valid(g)
         if g is None or g.is_empty:
@@ -322,6 +324,13 @@ def main() -> None:
         main = parts[0]
         keep = [main]
         for part in parts[1:]:
+            try:
+                land_ratio = part.intersection(target).area / part.area if part.area else 0.0
+            except Exception:
+                land_ratio = 0.0
+            if land_ratio >= 0.3:
+                keep.append(part)
+                continue
             area = part.area
             dist = main.distance(part)
             significant = area >= 0.02
@@ -329,8 +338,11 @@ def main() -> None:
             medium = area >= 0.004 and dist <= 0.55
             if significant or close or medium:
                 keep.append(part)
+            else:
+                dropped_dots += 1
         cleaned_geoms.append(keep[0] if len(keep) == 1 else MultiPolygon(keep))
     geoms = [as_valid(g) for g in cleaned_geoms]
+    print(f"sea dots dropped={dropped_dots}")
 
     geoms = reassign_nested_scraps(geoms)
     geoms = resolve_overlaps_by_mains(geoms, main_bodies(geoms))
@@ -359,6 +371,38 @@ def main() -> None:
     geoms = reassign_nested_scraps(simplified)
     geoms = resolve_overlaps_by_mains(geoms, main_bodies(geoms))
     geoms = [as_valid(g.intersection(admin)) if g is not None else None for g in geoms]
+
+    # Final residual gap fill: whatever the pipeline carved away (simplify
+    # shrink, overlap carving) is re-assigned to the nearest zone main so no
+    # white holes remain on land.
+    final_mains = main_bodies(geoms)
+    residual = as_valid(target.difference(unary_union([g for g in geoms if g is not None and not g.is_empty])))
+    residual_cells: list[Polygon] = []
+    for part in explode(residual):
+        if part.area < 5e-7:
+            continue
+        residual_cells.extend(subdivide(part, args.cell_area))
+    print(f"residual gap cells={len(residual_cells)}")
+    for cell in residual_cells:
+        pt = cell.representative_point()
+        best = None
+        best_d = 1e9
+        for i, m in enumerate(final_mains):
+            if m is None:
+                continue
+            d = geoms[i].distance(pt) if geoms[i] is not None else m.distance(pt)
+            if d < best_d:
+                best_d = d
+                best = i
+        if best is not None:
+            geoms[best] = as_valid(unary_union([geoms[best], cell]))
+    geoms = resolve_overlaps_by_mains(geoms, main_bodies(geoms))
+    geoms = [as_valid(g.intersection(admin)) if g is not None else None for g in geoms]
+
+    covered = unary_union([g for g in geoms if g is not None and not g.is_empty])
+    cover_ratio = covered.intersection(admin).area / admin.area
+    if cover_ratio < 0.999:
+        raise SystemExit(f"land coverage too low after fill: {cover_ratio:.5f}")
 
     out_feats = []
     for f, g in zip(feats, geoms):

@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.39",
-  "packagedAt": "2026-07-27T19:26:24.000Z",
-  "notes": "V3.3.39: QA pass — restore display font for headings/result code, drop unused logo files, unify F TRANS branding."
+  "appVersion": "3.3.40",
+  "packagedAt": "2026-07-27T19:36:08.000Z",
+  "notes": "V3.3.40: close white land holes in IT zones — keep land scraps, final residual gap fill, coverage guard (99.998%)."
 }
