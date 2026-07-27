@@ -1,16 +1,11 @@
-# Telepítési ellenőrzőlista
+# Telepítési ellenőrzőlista – V3.3
 
-- [ ] GitHub repository neve: `ftrans-iranyitoszam-terkep`
-- [ ] Default branch: `main`
-- [ ] A `public/index.html` megtalálható
-- [ ] A `wrangler.jsonc` megtalálható a repository gyökerében
-- [ ] Cloudflare Worker neve: `ftrans-iranyitoszam-terkep`
-- [ ] GitHub App hozzáfér a repositoryhoz
-- [ ] Production branch: `main`
-- [ ] Root directory: `/`
-- [ ] Build command üres
-- [ ] Deploy command: `npx wrangler deploy`
-- [ ] Első build sikeres
-- [ ] A workers.dev cím megnyílik
-- [ ] Magyar, német és olasz keresés kipróbálva
-- [ ] Mobilnézet kipróbálva
+1. `npm install`
+2. `npm test`
+3. `npm run test:labels`
+4. `npm run deploy:test` (csak teszt Worker)
+5. Ellenőrizd:
+   - `/__health` → `ok: true`, `version: 3.3.0`
+   - GeoJSON és Leaflet végpontok
+   - HU / DE / IT térkép megjelenik
+6. Élesítés csak külön jóváhagyás után.

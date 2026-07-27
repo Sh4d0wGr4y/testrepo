@@ -1,50 +1,44 @@
-# F-TRANS Irányítószám-kereső
+# F TRANS Irányítószám-kereső V3.3
 
-Egyszerű, reszponzív irányítószám-kereső Magyarország, Németország és Olaszország számára.
+Önálló, reprodukálható Cloudflare Workers alkalmazás Magyarország, Németország és Olaszország postai zónáinak kereséséhez.
 
-## Telepítés Cloudflare Workersre
+## Mi változott a V3.3-ban
 
-A projekt statikus fájlokat szolgál ki Cloudflare Workers Static Assets használatával.
+- A GeoJSON és a Leaflet fájlok **a repositoryban** vannak (`public/data/processed/*`, `public/vendor/*`).
+- Nincs manuális fájlkeresés, nincs futásidejű proxy régi Workerre.
+- A `/__health` végpont csak akkor ad `ok: true` választ, ha minden kötelező asset érvényes.
+- A hiányzó adatfájlok **nem** esnek vissza `index.html`-re.
+- Térkép: SVG renderer, AbortController, egy aktív zónaréteg, címkepont poligonon belüli ellenőrzése.
 
-### Helyi indítás
+## Helyi futtatás
 
 ```bash
 npm install
+npm test
+npm run test:labels
 npm run dev
 ```
 
-### Kézi telepítés
+## Teszt Worker telepítés
 
 ```bash
-npm install
-npm run deploy
+npm run deploy:test
 ```
 
-### Automatikus GitHub → Cloudflare telepítés
+Ez a `ftrans-iranyitoszam-terkep-v3-test` Workerre telepít.
 
-A Cloudflare Dashboardban nyisd meg a meglévő `ftrans-iranyitoszam-terkep` Workert:
+Az **éles** Workert (`ftrans-iranyitoszam-terkep`) csak külön jóváhagyás után szabad frissíteni.
 
-1. **Settings → Builds**
-2. **Connect**
-3. GitHub-fiók: `Sh4d0wGr4y`
-4. Repository: `ftrans-iranyitoszam-terkep`
-5. Production branch: `main`
-6. Root directory: `/`
-7. Build command: hagyd üresen
-8. Deploy command: `npx wrangler deploy`
-9. Save and Deploy
+## Ellenőrző végpontok
 
-A Wrangler `name` mezője szándékosan pontosan megegyezik a meglévő Worker nevével.
+- `/__health`
+- `/data/processed/manifest.json`
+- `/data/processed/hu_prefix1.geojson`
+- `/data/processed/de_prefix2.geojson`
+- `/data/processed/it_prefix2.geojson`
+- `/vendor/leaflet.js`
+- `/vendor/leaflet.css`
 
-## Projektstruktúra
+## Adatforrások
 
-- `public/` – a telepített weboldal teljes statikus tartalma
-- `wrangler.jsonc` – Cloudflare Workers-konfiguráció
-- `package.json` – Wrangler és fejlesztési parancsok
-
-## Biztonság
-
-Ne tölts fel Cloudflare API-tokent, jelszót vagy `.env` fájlt a repositoryba.
-
-
-Automatikus Cloudflare telepítés aktiválva.
+Lásd: `public/data/processed/manifest.json`.

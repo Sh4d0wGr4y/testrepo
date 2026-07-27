@@ -1,0 +1,13 @@
+/data/processed/*
+  Cache-Control: public, max-age=3600
+  X-Content-Type-Options: nosniff
+
+/vendor/*
+  Cache-Control: public, max-age=86400
+  X-Content-Type-Options: nosniff
+
+/__health
+  Cache-Control: no-store
+
+/*.geojson
+  Content-Type: application/geo+json; charset=utf-8

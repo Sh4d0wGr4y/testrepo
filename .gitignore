@@ -3,6 +3,10 @@ node_modules/
 .dev.vars
 .env
 .env.*
-.DS_Store
-Thumbs.db
+!.env.example
+DEPLOYMENT_DIAGNOSZTIKA.json
 *.log
+playwright-report/
+test-results/
+/artifacts/
+artifacts/
