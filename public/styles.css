@@ -125,25 +125,42 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .brand-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .brand {
   display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
   color: var(--text);
   text-decoration: none;
   min-width: 0;
 }
-.brand-logo {
+.brand-mark {
   display: block;
-  width: min(220px, 62vw);
-  height: auto;
+  width: 58px;
+  height: 43px;
   flex: 0 0 auto;
+  filter: drop-shadow(0 6px 12px rgba(27, 138, 62, 0.25));
+}
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.brand-logo {
+  font-family: var(--font-brand);
+  font-size: 1.7rem;
+  line-height: 0.92;
+  letter-spacing: 0.02em;
+  word-spacing: 0.14em;
+  font-style: normal;
+  font-weight: 900;
+  color: var(--green);
+  white-space: nowrap;
 }
 .brand-tagline {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.02em;
-  margin-left: 2px;
+  margin-top: 4px;
 }
 .header-actions { display: flex; gap: 6px; }
 .icon-button {
@@ -843,7 +860,8 @@ html[data-theme='dark'] .city-dot { background: #9fd4ab; box-shadow: 0 0 0 2px #
 
 @media (max-width: 580px) {
   .sidebar { gap: 12px; }
-  .brand-logo { width: min(180px, 56vw); }
+  .brand-mark { width: 48px; height: 36px; }
+  .brand-logo { font-size: 1.35rem; }
   .brand-tagline { font-size: .7rem; }
   .search-line { grid-template-columns: 1fr; }
   .primary-button { width: 100%; min-height: 48px; }

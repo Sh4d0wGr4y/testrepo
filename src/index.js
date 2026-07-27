@@ -4,7 +4,7 @@
  * - missing /data/* and /vendor/* never fall back to index.html
  */
 
-const APP_VERSION = '3.3.37';
+const APP_VERSION = '3.3.38';
 
 const REQUIRED_ASSETS = [
   { path: '/data/processed/manifest.json', kind: 'json', minBytes: 200 },
@@ -207,6 +207,7 @@ export default {
       pathname === '/styles.css' ||
       pathname === '/logo.svg' ||
       pathname === '/logo-ftrans.svg' ||
+      pathname === '/logo-leaf.svg' ||
       pathname === '/favicon.svg' ||
       pathname.endsWith('.html')
     ) {
