@@ -9,12 +9,12 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="description" content="F TRANS ZónaTérkép – irányítószám- és postai zóna kereső Magyarországhoz, Németországhoz és Olaszországhoz." />
   <title>F TRANS ZónaTérkép</title>
-  <link rel="icon" href="/favicon.svg?v=3.3.47" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.svg?v=3.3.48" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/vendor/leaflet.css" />
-  <link rel="stylesheet" href="/styles.css?v=3.3.47" />
+  <link rel="stylesheet" href="/styles.css?v=3.3.48" />
 </head>
 <body>
   <a class="skip-link" href="#searchInput">Ugrás a keresőhöz</a>
@@ -63,6 +63,15 @@
         </div>
         <p class="field-help" id="inputHelp">Írd be a teljes irányítószámot.</p>
       </form>
+
+      <section class="control-section history-section" aria-labelledby="historyTitle">
+        <div class="section-head">
+          <h2 id="historyTitle">Utolsó keresések</h2>
+          <button class="text-button" id="clearHistoryButton" type="button">Törlés</button>
+        </div>
+        <div class="history-list" id="historyList"></div>
+        <p class="empty-note" id="historyEmpty">Még nincs korábbi keresés.</p>
+      </section>
 
       <section class="control-section" aria-labelledby="mapViewTitle">
         <div class="section-head"><h2 id="mapViewTitle">Térkép nézete</h2></div>
@@ -116,15 +125,6 @@
         </div>
         <div class="quick-grid" id="quickGrid" role="group" aria-label="Postai zóna gyors kiválasztása"></div>
         <p class="empty-note" id="quickEmpty" hidden>Ebben a csoportban nincs megjeleníthető zóna.</p>
-      </section>
-
-      <section class="control-section history-section" aria-labelledby="historyTitle">
-        <div class="section-head">
-          <h2 id="historyTitle">Utolsó keresések</h2>
-          <button class="text-button" id="clearHistoryButton" type="button">Törlés</button>
-        </div>
-        <div class="history-list" id="historyList"></div>
-        <p class="empty-note" id="historyEmpty">Még nincs korábbi keresés.</p>
       </section>
 
     </aside>
@@ -186,7 +186,7 @@
 
       <footer class="map-footer">
         <span id="dataStatus">Térképi adatok betöltése…</span>
-        <span>V3.3.47 · ZónaTérkép</span>
+        <span>V3.3.48 · ZónaTérkép</span>
       </footer>
     </main>
 

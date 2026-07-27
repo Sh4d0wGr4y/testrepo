@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.47",
-  "packagedAt": "2026-07-27T20:44:24.000Z",
-  "notes": "V3.3.47: precise borders everywhere — HU/DE restored to source-accurate edges (interior gaps only), IT re-clipped with GISCO 1:1M instead of coarse NE 10m."
+  "appVersion": "3.3.48",
+  "packagedAt": "2026-07-27T20:48:41.000Z",
+  "notes": "V3.3.48: recent searches section moved directly under the search box."
 }
