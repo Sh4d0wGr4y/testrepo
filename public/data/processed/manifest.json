@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.48",
-  "packagedAt": "2026-07-27T20:48:41.000Z",
-  "notes": "V3.3.48: recent searches section moved directly under the search box."
+  "appVersion": "3.3.49",
+  "packagedAt": "2026-07-27T20:51:12.000Z",
+  "notes": "V3.3.49: clicking the F TRANS logo reloads the whole page."
 }
