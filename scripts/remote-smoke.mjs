@@ -20,7 +20,7 @@ page.on('pageerror', (e) => errors.push(String(e)));
 
 try {
   const version = await (await fetch(`${base}/__version`)).json();
-  if (version.version !== '3.3.42') throw new Error(`verzió: ${JSON.stringify(version)}`);
+  if (version.version !== '3.3.43') throw new Error(`verzió: ${JSON.stringify(version)}`);
   console.log('OK version', version.version);
 
   await page.goto(base, { waitUntil: 'networkidle', timeout: 60000 });
@@ -45,7 +45,7 @@ try {
   await page.screenshot({ path: path.join(out, 'v332-de-full.png'), fullPage: true });
   console.log('OK DE full country', deLayer);
 
-  await page.locator('.range-button', { hasText: '01–10' }).click();
+  await page.locator('.range-button', { hasText: '01–09' }).click();
   await wait(700);
   const filtered = await page.evaluate(() => ({
     paths: [...document.querySelectorAll('.leaflet-overlay-pane path')]
@@ -53,8 +53,8 @@ try {
     quick: document.querySelectorAll('.quick-button').length,
     activeRanges: document.querySelectorAll('.range-button.is-active').length
   }));
-  if (filtered.activeRanges < 1) throw new Error('DE 01–10 szűrés nem aktív');
-  if (filtered.quick > 15) throw new Error(`DE 01–10 szűrés után túl sok gyorsgomb: ${filtered.quick}`);
+  if (filtered.activeRanges < 1) throw new Error('DE 01–09 szűrés nem aktív');
+  if (filtered.quick > 15) throw new Error(`DE 01–09 szűrés után túl sok gyorsgomb: ${filtered.quick}`);
   await page.screenshot({ path: path.join(out, 'v332-de-01-10.png'), fullPage: true });
   console.log('OK DE filtered', filtered);
 

@@ -47,7 +47,7 @@ for (const rel of REQUIRED_FILES) {
 
 const worker = fs.readFileSync(path.join(root, 'src/index.js'), 'utf8');
 assert.match(worker, /__health/);
-assert.match(worker, /APP_VERSION = '3\.3\.42'/);
+assert.match(worker, /APP_VERSION = '3\.3\.43'/);
 ok('worker /__health és verzió');
 
 const app = fs.readFileSync(path.join(publicDir, 'app.js'), 'utf8');
@@ -120,7 +120,7 @@ ok('mobil szűrőpanel');
 
 
 const manifest = JSON.parse(fs.readFileSync(path.join(publicDir, 'data/processed/manifest.json'), 'utf8'));
-assert.equal(manifest.appVersion, '3.3.42');
+assert.equal(manifest.appVersion, '3.3.43');
 ok('manifest appVersion');
 
 for (const [name, spec] of Object.entries(EXPECTED)) {
@@ -154,7 +154,9 @@ assert.ok(it.features.some((f) => String(f.properties.prefix) === '00'), 'IT 00 
 ok('IT 00 prefix megvan – csoportozás 00–09-cel indítható');
 
 // DE tartománycímkék elvárt mintája
-assert.ok(app.includes("01–10") || app.includes('padStart(2'), 'DE csoportozás kódja megvan');
+assert.ok(app.includes('padStart(2'), 'DE/IT csoportozás kódja megvan');
+assert.ok(app.includes('DECADE_COLORS'), 'tízes csoport-színek megvannak');
+assert.ok(!app.includes('01–10'), 'régi eltolt DE csoport (01–10) nem maradhat');
 ok('DE/IT csoportos szűrés kódja megvan');
 
 if (process.exitCode) {

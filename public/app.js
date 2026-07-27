@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.42';
+const APP_VERSION = '3.3.43';
 
 const CONFIG = {
   HU: {
@@ -297,39 +297,22 @@ function showPlaceMarker(lat, lon, label = '') {
 
 function cleanDigits(value) { return String(value || '').replace(/\D/g, ''); }
 function prefixNumber(prefix) { const n = Number.parseInt(prefix, 10); return Number.isFinite(n) ? n : -1; }
+// DE/IT: tízes zónacsoportonként egy-egy jól megkülönböztethető színcsalád
+// (0x zafír, 1x tenger, 2x smaragd, 3x lime, 4x arany, 5x réz, 6x rubin,
+//  7x magenta, 8x ametiszt, 9x acélkék) — a szűrőkkel azonos logika.
+const DECADE_COLORS = ['#1f5fd6','#0c8f86','#1aa86a','#6fad2e','#d4a017','#d97706','#c2410c','#c23d7a','#6b4fbf','#3d7ea8'];
+
 function colorFor(prefix, country = state.country) {
   const n = Math.max(0, prefixNumber(prefix));
   const digits = CONFIG[country]?.prefixDigits || 2;
   if (digits === 1) {
     return HU_ZONE_COLORS[n] || HU_ZONE_COLORS[1];
   }
-  // DE/IT: 00→99 prémium folyamatos ramp (zafír → smaragd → arany → réz → rubin → ametiszt)
-  const stops = [
-    [0, [31, 95, 214]],
-    [16, [12, 143, 134]],
-    [33, [26, 168, 106]],
-    [50, [212, 160, 23]],
-    [66, [217, 119, 6]],
-    [83, [194, 65, 12]],
-    [100, [91, 79, 207]]
-  ];
-  const t = Math.min(100, (n / 99) * 100);
-  let a = stops[0];
-  let b = stops[stops.length - 1];
-  for (let i = 0; i < stops.length - 1; i += 1) {
-    if (t >= stops[i][0] && t <= stops[i + 1][0]) {
-      a = stops[i];
-      b = stops[i + 1];
-      break;
-    }
-  }
-  const span = Math.max(1, b[0] - a[0]);
-  const u = (t - a[0]) / span;
-  const mix = (x, y) => Math.round(x + (y - x) * u);
-  const r = mix(a[1][0], b[1][0]);
-  const g = mix(a[1][1], b[1][1]);
-  const bl = mix(a[1][2], b[1][2]);
-  return `rgb(${r}, ${g}, ${bl})`;
+  const decade = Math.min(9, Math.floor(n / 10));
+  const base = DECADE_COLORS[decade];
+  // A csoporton belül finom világosság-lépcső, hogy a szomszéd zónák határa látsszon.
+  const step = (n % 10) - 4.5;
+  return shadeColor(base, step * 0.028);
 }
 
 function zoneFillColor(prefix) {
@@ -496,25 +479,17 @@ function closeFiltersIfMobile() {
 
 function getRanges(country) {
   if (country === 'HU') return [{ label: '1–9', min: 1, max: 9 }];
+  // DE/IT: tízes csoportok az első számjegy szerint (00–09, 10–19, …, 90–99).
+  // DE-ben nincs 00, ezért ott a felirat 01–09.
   const ranges = [];
-  if (country === 'IT') {
-    // IT adatban létezik a 00 előtag, ezért 00–09-cel kezdünk.
-    for (let start = 0; start <= 90; start += 10) {
-      ranges.push({
-        label: `${String(start).padStart(2, '0')}–${String(Math.min(start + 9, 99)).padStart(2, '0')}`,
-        min: start,
-        max: Math.min(start + 9, 99)
-      });
-    }
-  } else {
-    // DE: 01–10, 11–20, …, 91–99
-    for (let start = 1; start <= 91; start += 10) {
-      ranges.push({
-        label: `${String(start).padStart(2, '0')}–${String(Math.min(start + 9, 99)).padStart(2, '0')}`,
-        min: start,
-        max: Math.min(start + 9, 99)
-      });
-    }
+  for (let start = 0; start <= 90; start += 10) {
+    const end = start + 9;
+    const labelStart = country === 'DE' && start === 0 ? 1 : start;
+    ranges.push({
+      label: `${String(labelStart).padStart(2, '0')}–${String(end).padStart(2, '0')}`,
+      min: start,
+      max: end
+    });
   }
   return ranges;
 }

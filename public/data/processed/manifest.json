@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.42",
-  "packagedAt": "2026-07-27T19:58:19.000Z",
-  "notes": "V3.3.42: logo is the green Cooper Black F TRANS wordmark only (leaf removed from header)."
+  "appVersion": "3.3.43",
+  "packagedAt": "2026-07-27T20:03:54.000Z",
+  "notes": "V3.3.43: decade zone groups by first digit (DE 01–09, 10–19, …; IT 00–09, …) and group-based coloring for DE/IT."
 }
