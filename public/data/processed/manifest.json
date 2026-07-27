@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.41",
-  "packagedAt": "2026-07-27T19:54:12.000Z",
-  "notes": "V3.3.41: HU/DE zones fitted to national borders (0 spill, HU 100% / DE 99.93% cover, Bodensee stays water); city reality-check test; site named F TRANS ZónaTérkép."
+  "appVersion": "3.3.42",
+  "packagedAt": "2026-07-27T19:58:19.000Z",
+  "notes": "V3.3.42: logo is the green Cooper Black F TRANS wordmark only (leaf removed from header)."
 }

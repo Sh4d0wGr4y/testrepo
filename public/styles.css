@@ -133,13 +133,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   text-decoration: none;
   min-width: 0;
 }
-.brand-mark {
-  display: block;
-  width: 58px;
-  height: 43px;
-  flex: 0 0 auto;
-  filter: drop-shadow(0 6px 12px rgba(27, 138, 62, 0.25));
-}
 .brand-copy {
   display: flex;
   flex-direction: column;
@@ -147,14 +140,15 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 }
 .brand-logo {
   font-family: var(--font-brand);
-  font-size: 1.7rem;
-  line-height: 0.92;
+  font-size: 2.1rem;
+  line-height: 0.95;
   letter-spacing: 0.02em;
-  word-spacing: 0.14em;
+  word-spacing: 0.16em;
   font-style: normal;
   font-weight: 900;
   color: var(--green);
   white-space: nowrap;
+  text-shadow: 0 2px 8px rgba(27, 138, 62, 0.18);
 }
 .brand-tagline {
   color: var(--muted);
@@ -861,8 +855,7 @@ html[data-theme='dark'] .city-dot { background: #9fd4ab; box-shadow: 0 0 0 2px #
 
 @media (max-width: 580px) {
   .sidebar { gap: 12px; }
-  .brand-mark { width: 48px; height: 36px; }
-  .brand-logo { font-size: 1.35rem; }
+  .brand-logo { font-size: 1.6rem; }
   .brand-tagline { font-size: .7rem; }
   .search-line { grid-template-columns: 1fr; }
   .primary-button { width: 100%; min-height: 48px; }
