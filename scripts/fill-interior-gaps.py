@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-"""Fit HU and DE postal zones to the national border.
+"""Fill interior gaps between zones WITHOUT touching the outer border.
 
-- Clips zone colors so they never spill into neighboring countries.
-- Fills uncovered land gaps by assigning them to the nearest zone.
-- Skips very large gaps (Lake Constance stays water, unpainted).
-- Guards the result with a coverage assertion.
-
-Run after clean-zone-geometries.py. IT is handled by fill-it-land-gaps.py.
+The outer edge of the zone union comes from the source data (OSM / GISCO
+LAU) and matches the basemap borders precisely — external clipping would
+only make it worse. This script closes the white seams and holes that sit
+fully inside the country by assigning them to the nearest zone.
 """
 
 from __future__ import annotations
@@ -22,20 +20,7 @@ from shapely.validation import make_valid
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "public" / "data" / "processed"
 
-COUNTRIES = {
-    "hu_prefix1.geojson": {
-        "admin": ROOT / "scripts" / "data" / "hungary_admin.geojson",
-        # Hungary is landlocked; every inland gap is real land.
-        "max_gap_fill_deg2": 1.0,
-        "min_cover": 0.998,
-    },
-    "de_prefix2.geojson": {
-        "admin": ROOT / "scripts" / "data" / "germany_admin.geojson",
-        # Skip gaps larger than ~130 km2 (Lake Constance ~315 km2 stays water).
-        "max_gap_fill_deg2": 0.016,
-        "min_cover": 0.995,
-    },
-}
+FILES = ("hu_prefix1.geojson", "de_prefix2.geojson")
 
 
 def as_valid(geom):
@@ -83,6 +68,14 @@ def subdivide(poly: Polygon, max_area: float) -> list[Polygon]:
     return out
 
 
+def fill_union_holes(union):
+    """Return the union with interior rings removed (outer edge unchanged)."""
+    parts = [Polygon(p.exterior.coords) for p in explode(union)]
+    if not parts:
+        return None
+    return as_valid(unary_union(parts))
+
+
 def main_bodies(geoms: list) -> list:
     out = []
     for g in geoms:
@@ -91,32 +84,21 @@ def main_bodies(geoms: list) -> list:
     return out
 
 
-def process(name: str, cfg: dict) -> None:
+def process(name: str) -> None:
     path = DATA / name
     data = json.loads(path.read_text())
-    admin = as_valid(shape(json.loads(cfg["admin"].read_text())["features"][0]["geometry"]))
-    if admin is None:
-        raise SystemExit(f"invalid admin outline for {name}")
-
     feats = data["features"]
     geoms = [as_valid(shape(f["geometry"])) for f in feats]
 
-    before = unary_union([g for g in geoms if g is not None])
-    outside_before = before.difference(admin).area
-    cover_before = before.intersection(admin).area / admin.area
+    union = as_valid(unary_union([g for g in geoms if g is not None]))
+    outer = fill_union_holes(union)
+    holes = as_valid(outer.difference(union))
+    hole_area = 0 if holes is None else holes.area
+    print(f"{name}: interior hole area={hole_area:.6f} deg2")
 
-    # 1) Hard clip to the national border.
-    geoms = [as_valid(g.intersection(admin)) if g is not None else None for g in geoms]
-
-    # 2) Fill land gaps (skip large water bodies) to the nearest zone.
-    covered = unary_union([g for g in geoms if g is not None and not g.is_empty])
-    gaps = as_valid(admin.difference(covered))
-    mains = main_bodies(geoms)
     cells: list[Polygon] = []
-    skipped = 0
-    for part in explode(gaps):
-        if part.area > cfg["max_gap_fill_deg2"]:
-            skipped += 1
+    for part in explode(holes):
+        if part.area < 1e-9:
             continue
         cells.extend(subdivide(part, 0.004))
     for cell in cells:
@@ -133,7 +115,7 @@ def process(name: str, cfg: dict) -> None:
         if best is not None:
             geoms[best] = as_valid(unary_union([geoms[best], cell]))
 
-    # 3) Resolve any overlaps created at cell seams (nearest main wins).
+    # Seam overlaps from cell edges: nearest main body wins.
     mains = main_bodies(geoms)
     for i in range(len(geoms)):
         for j in range(i + 1, len(geoms)):
@@ -152,26 +134,18 @@ def process(name: str, cfg: dict) -> None:
                 else:
                     geoms[i] = as_valid(geoms[i].difference(part))
 
-    geoms = [as_valid(g.intersection(admin)) if g is not None else None for g in geoms]
-
-    after = unary_union([g for g in geoms if g is not None and not g.is_empty])
-    cover_after = after.intersection(admin).area / admin.area
-    outside_after = after.difference(admin).area
-    print(
-        f"{name}: cover {cover_before:.5f} -> {cover_after:.5f}, "
-        f"outside {outside_before:.6f} -> {outside_after:.8f} deg2, "
-        f"gap cells={len(cells)} big gaps skipped={skipped}"
-    )
-    if cover_after < cfg["min_cover"]:
-        raise SystemExit(f"{name}: coverage too low after border fit: {cover_after:.5f}")
-    if cover_after < cover_before - 1e-6:
-        raise SystemExit(f"{name}: coverage regressed: {cover_before:.5f} -> {cover_after:.5f}")
+    new_union = as_valid(unary_union([g for g in geoms if g is not None and not g.is_empty]))
+    # The outer edge must stay identical to the source data.
+    drift = new_union.symmetric_difference(outer).area
+    print(f"{name}: filled cells={len(cells)} outer-edge drift={drift:.8f} deg2")
+    if drift > 1e-4:
+        raise SystemExit(f"{name}: outer border changed too much ({drift:.6f})")
 
     out_feats = []
     for f, g in zip(feats, geoms):
         if g is None or g.is_empty:
             raise SystemExit(f"{name}: zone {f['properties'].get('prefix')} vanished")
-        parts = [p for p in explode(g) if p.area >= 1e-7]
+        parts = [p for p in explode(g) if p.area >= 1e-9]
         s = parts[0] if len(parts) == 1 else MultiPolygon(parts)
         cy = s.centroid.y
         props = dict(f["properties"])
@@ -184,8 +158,8 @@ def process(name: str, cfg: dict) -> None:
 
 
 def main() -> None:
-    for name, cfg in COUNTRIES.items():
-        process(name, cfg)
+    for name in FILES:
+        process(name)
 
 
 if __name__ == "__main__":

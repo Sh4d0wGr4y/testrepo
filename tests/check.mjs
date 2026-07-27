@@ -47,7 +47,7 @@ for (const rel of REQUIRED_FILES) {
 
 const worker = fs.readFileSync(path.join(root, 'src/index.js'), 'utf8');
 assert.match(worker, /__health/);
-assert.match(worker, /APP_VERSION = '3\.3\.46'/);
+assert.match(worker, /APP_VERSION = '3\.3\.47'/);
 ok('worker /__health és verzió');
 
 const app = fs.readFileSync(path.join(publicDir, 'app.js'), 'utf8');
@@ -120,7 +120,7 @@ ok('mobil szűrőpanel');
 
 
 const manifest = JSON.parse(fs.readFileSync(path.join(publicDir, 'data/processed/manifest.json'), 'utf8'));
-assert.equal(manifest.appVersion, '3.3.46');
+assert.equal(manifest.appVersion, '3.3.47');
 ok('manifest appVersion');
 
 for (const [name, spec] of Object.entries(EXPECTED)) {
