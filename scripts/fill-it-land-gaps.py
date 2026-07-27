@@ -173,6 +173,31 @@ def main() -> None:
     # Hard political clip — never paint neighboring countries.
     geoms = [as_valid(g.intersection(admin)) for g in geoms]
 
+    # Remove tiny detached scraps (visual dots) while keeping meaningful islands.
+    cleaned_geoms = []
+    for g in geoms:
+        g = as_valid(g)
+        if g is None or g.is_empty:
+            cleaned_geoms.append(g)
+            continue
+        parts = explode(g)
+        if len(parts) <= 1:
+            cleaned_geoms.append(g)
+            continue
+        parts = sorted(parts, key=lambda p: p.area, reverse=True)
+        main = parts[0]
+        keep = [main]
+        for part in parts[1:]:
+            area = part.area
+            dist = main.distance(part)
+            significant = area >= 0.02
+            close = dist <= 0.22
+            medium = area >= 0.004 and dist <= 0.55
+            if significant or close or medium:
+                keep.append(part)
+        cleaned_geoms.append(keep[0] if len(keep) == 1 else MultiPolygon(keep))
+    geoms = [as_valid(g) for g in cleaned_geoms]
+
     out_feats = []
     for f, g in zip(feats, geoms):
         g = strip_holes(g)
