@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.45",
-  "packagedAt": "2026-07-27T20:23:12.000Z",
-  "notes": "V3.3.45: zone card repositioned bottom-right with glass translucency; on phones it is a slide-up sheet above the dock."
+  "appVersion": "3.3.46",
+  "packagedAt": "2026-07-27T20:36:45.000Z",
+  "notes": "V3.3.46: stable scrollbar gutter on the left panel — no shift when switching back to Hungary."
 }
