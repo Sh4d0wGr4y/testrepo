@@ -4,7 +4,7 @@
  * - missing /data/* and /vendor/* never fall back to index.html
  */
 
-const APP_VERSION = '3.3.36';
+const APP_VERSION = '3.3.37';
 
 const REQUIRED_ASSETS = [
   { path: '/data/processed/manifest.json', kind: 'json', minBytes: 200 },

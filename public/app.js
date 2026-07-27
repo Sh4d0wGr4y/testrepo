@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION = '3.3.36';
+const APP_VERSION = '3.3.37';
 
 const CONFIG = {
   HU: {

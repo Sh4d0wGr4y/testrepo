@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.36",
-  "packagedAt": "2026-07-27T11:02:00.000Z",
-  "notes": "V3.3.36: embed Cooper Black webfont; logo text is F TRANS with space."
+  "appVersion": "3.3.37",
+  "packagedAt": "2026-07-27T11:04:30.000Z",
+  "notes": "V3.3.37: refresh page logo — path-based Cooper Black F TRANS SVG."
 }

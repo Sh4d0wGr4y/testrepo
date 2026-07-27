@@ -20,7 +20,7 @@ page.on('pageerror', (e) => errors.push(String(e)));
 
 try {
   const version = await (await fetch(`${base}/__version`)).json();
-  if (version.version !== '3.3.36') throw new Error(`verzió: ${JSON.stringify(version)}`);
+  if (version.version !== '3.3.37') throw new Error(`verzió: ${JSON.stringify(version)}`);
   console.log('OK version', version.version);
 
   await page.goto(base, { waitUntil: 'networkidle', timeout: 60000 });

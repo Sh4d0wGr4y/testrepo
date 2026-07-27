@@ -28,7 +28,14 @@
 @font-face {
   font-family: "Cooper Black";
   src: url("/fonts/Cooper-Black.woff2") format("woff2");
-  font-weight: 700 900;
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cooper Black";
+  src: url("/fonts/Cooper-Black.woff2") format("woff2");
+  font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
@@ -116,23 +123,28 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   overflow-y: auto;
 }
 .brand-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; min-width: 0; }
-.brand-copy { display: flex; flex-direction: column; min-width: 0; }
-.brand-logo,
-.brand-copy strong {
-  font-family: var(--font-brand);
-  font-size: 2rem;
-  line-height: 0.9;
-  letter-spacing: 0.02em;
-  word-spacing: 0.18em;
-  font-style: normal;
-  font-weight: 900;
-  color: var(--green);
-  text-transform: none;
-  white-space: nowrap;
-  -webkit-font-smoothing: antialiased;
+.brand {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  color: var(--text);
+  text-decoration: none;
+  min-width: 0;
 }
-.brand-copy span { color: var(--muted); font-size: 0.78rem; font-weight: 800; margin-top: 6px; letter-spacing: 0.02em; }
+.brand-logo {
+  display: block;
+  width: min(220px, 62vw);
+  height: auto;
+  flex: 0 0 auto;
+}
+.brand-tagline {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin-left: 2px;
+}
 .header-actions { display: flex; gap: 6px; }
 .icon-button {
   width: 40px; height: 40px; display: inline-grid; place-items: center;
@@ -831,9 +843,8 @@ html[data-theme='dark'] .city-dot { background: #9fd4ab; box-shadow: 0 0 0 2px #
 
 @media (max-width: 580px) {
   .sidebar { gap: 12px; }
-  .brand-logo,
-  .brand-copy strong { font-size: 1.7rem; }
-  .brand-copy span { font-size: .7rem; }
+  .brand-logo { width: min(180px, 56vw); }
+  .brand-tagline { font-size: .7rem; }
   .search-line { grid-template-columns: 1fr; }
   .primary-button { width: 100%; min-height: 48px; }
   .country-flag-button { min-height: 72px; }
