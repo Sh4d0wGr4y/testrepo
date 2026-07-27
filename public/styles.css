@@ -656,45 +656,58 @@ html[data-theme='dark'] .fs-flag-button.is-active .fs-flag-code {
 .loader { width: 34px; height: 34px; border: 3px solid var(--line); border-top-color: var(--green); border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Zóna-kártya: jobb alsó sarok, erős üveghatás – áttetsző, de olvasható. */
 .result-card {
-  position: absolute; z-index: 700; right: 18px; top: 18px; width: min(330px, calc(100% - 36px));
-  padding: 18px 18px 16px;
-  border: 1px solid rgba(28, 52, 38, 0.10);
+  position: absolute; z-index: 700; right: 18px; bottom: 26px; top: auto;
+  width: min(310px, calc(100% - 36px));
+  max-height: min(74%, 540px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 16px 16px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 18px;
   color: #14201a;
-  background: rgba(255, 255, 255, 0.90);
-  box-shadow: 0 20px 48px rgba(16, 37, 23, 0.16);
-  backdrop-filter: blur(16px) saturate(1.12);
-  -webkit-backdrop-filter: blur(16px) saturate(1.12);
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 20px 48px rgba(16, 37, 23, 0.18);
+  backdrop-filter: blur(22px) saturate(1.3);
+  -webkit-backdrop-filter: blur(22px) saturate(1.3);
+  animation: result-in .38s var(--ease-premium);
+}
+@keyframes result-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 html[data-theme='dark'] .result-card {
   color: #eef4f0;
-  background: rgba(18, 28, 23, 0.92);
-  border-color: rgba(180, 210, 190, 0.12);
+  background: rgba(18, 28, 23, 0.78);
+  border-color: rgba(180, 210, 190, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 20px 48px rgba(0, 0, 0, 0.4);
 }
 .result-card[hidden] { display: none; }
 .result-close { position: absolute; right: 10px; top: 9px; width: 32px; height: 32px; border: 0; border-radius: 9px; background: transparent; color: #5f6e64; font-size: 1.35rem; }
 .result-close:hover { background: #edf4ef; }
 .result-badge { display: inline-flex; padding: 5px 9px; border-radius: 999px; color: #17672b; background: #e4f4e7; font-size: .72rem; font-weight: 850; }
 .result-code {
-  margin-top: 12px;
+  margin-top: 10px;
   color: #187532;
   font-family: var(--font-display);
-  font-size: 3.15rem;
+  font-size: 2.7rem;
   line-height: .95;
   font-weight: 700;
   letter-spacing: -.04em;
 }
-.result-card h2 { margin: 8px 30px 0 0; font-size: 1.28rem; font-weight: 800; }
-.result-card > p { margin: 4px 0 0; color: #607066; }
-.result-details { margin: 17px 0 0; border-top: 1px solid #e1e9e3; }
+.result-card h2 { margin: 6px 30px 0 0; font-size: 1.16rem; font-weight: 800; }
+.result-card > p { margin: 4px 0 0; color: #4b5a51; }
+html[data-theme='dark'] .result-card > p { color: #b4c4ba; }
+.result-details { margin: 13px 0 0; border-top: 1px solid rgba(28, 52, 38, 0.12); }
 .result-details div {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
-  padding: 10px 0;
-  border-bottom: 1px solid #e8eee9;
+  gap: 3px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(28, 52, 38, 0.09);
 }
 .result-details dt { color: #69776e; font-size: .72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
 .result-details dd { margin: 0; text-align: left; font-size: .92rem; font-weight: 800; overflow-wrap: anywhere; }
@@ -845,6 +858,29 @@ html[data-theme='dark'] .city-dot { background: #9fd4ab; box-shadow: 0 0 0 2px #
     color: #fff;
   }
 
+  /* Telefonon a zóna-kártya alulról felcsúszó üveglap, a dokk fölött. */
+  .result-card {
+    position: fixed;
+    left: max(10px, env(safe-area-inset-left));
+    right: max(10px, env(safe-area-inset-right));
+    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 74px);
+    top: auto;
+    width: auto;
+    max-height: 52dvh;
+    z-index: 1300;
+    border-radius: 20px;
+    animation: result-in-sheet .36s var(--ease-premium);
+  }
+  @keyframes result-in-sheet {
+    from { opacity: 0; transform: translateY(28px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .result-close {
+    width: 40px;
+    height: 40px;
+    font-size: 1.55rem;
+  }
+
   .mobile-drawer-backdrop {
     display: block;
     position: fixed;
@@ -928,14 +964,6 @@ html[data-theme='dark'] .city-dot { background: #9fd4ab; box-shadow: 0 0 0 2px #
   .map-toolbar { display: grid; }
   .map-actions { justify-content: flex-start; flex-wrap: wrap; }
   .map-actions .secondary-button { flex: 1 1 auto; }
-  .result-card {
-    right: 10px;
-    top: 10px;
-    width: calc(100% - 20px);
-    max-height: calc(100% - 92px);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
   .fs-country-flags {
     left: max(10px, env(safe-area-inset-left));
     bottom: max(12px, env(safe-area-inset-bottom));
