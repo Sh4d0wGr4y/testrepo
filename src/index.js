@@ -205,6 +205,9 @@ export default {
       pathname === '/index.html' ||
       pathname === '/app.js' ||
       pathname === '/styles.css' ||
+      pathname === '/logo.svg' ||
+      pathname === '/logo-ftrans.svg' ||
+      pathname === '/favicon.svg' ||
       pathname.endsWith('.html')
     ) {
       headers.set('cache-control', 'no-cache');
