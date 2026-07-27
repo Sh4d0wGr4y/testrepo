@@ -225,7 +225,7 @@
       ]
     }
   },
-  "appVersion": "3.3.32",
-  "packagedAt": "2026-07-27T06:22:26.000Z",
-  "notes": "V3.3.32: remove stray detached dot-polygons from IT zones; keep border clip."
+  "appVersion": "3.3.33",
+  "packagedAt": "2026-07-27T06:46:38.000Z",
+  "notes": "V3.3.33: dissolve wrong-color nested IT zone scraps into surrounding zones."
 }
