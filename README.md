@@ -1,4 +1,4 @@
-# F-TRANS Irányítószám-kereső V3.3
+# F TRANS Irányítószám-kereső V3.3
 
 Önálló, reprodukálható Cloudflare Workers alkalmazás Magyarország, Németország és Olaszország postai zónáinak kereséséhez.
 

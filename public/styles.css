@@ -22,6 +22,7 @@
   --radius-md: 14px;
   --font-ui: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-brand: "Cooper Black", "CooperBlack", serif;
+  --font-display: "Fraunces", Georgia, serif;
 }
 
 /* Cooper* Black (OFL) — true Cooper Black weight for the F TRANS logo */
@@ -433,7 +434,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 }
 .map-toolbar h1 {
   margin: 0;
-  font-family: var(--font-brand);
+  font-family: var(--font-display);
   font-size: clamp(1.35rem, 2.3vw, 1.95rem);
   letter-spacing: -0.03em;
   font-weight: 700;
@@ -623,7 +624,7 @@ html[data-theme='dark'] .result-card {
 .result-code {
   margin-top: 12px;
   color: #187532;
-  font-family: var(--font-brand);
+  font-family: var(--font-display);
   font-size: 3.15rem;
   line-height: .95;
   font-weight: 700;
